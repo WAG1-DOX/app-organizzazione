@@ -3,17 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>App organizzazione</title>
+  <meta name="theme-color" content="#0a0a0b">
+  <title>Organizza</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>I miei impegni</h1>
+  <div class="guscio">
 
-  <!-- Qui app.js inserisce la lista degli eventi -->
-  <ul id="lista-eventi"></ul>
+    <!-- ===== Barra a sinistra ===== -->
+    <aside class="barra-laterale">
+      <a class="logo" href="#home"><span class="logo-segno">◆</span> Organizza</a>
 
-  <!-- Prima i dati finti, poi il codice che li usa -->
+      <!-- le voci del menu le crea app.js -->
+      <nav class="menu" id="menu"></nav>
+
+      <!-- mini calendario delle lezioni -->
+      <div class="mini-calendario" id="mini-calendario"></div>
+
+      <div class="barra-fondo">
+        <button class="menu-voce" id="bottone-reset" type="button" title="Cancella i dati salvati nel browser e torna ai dati finti">
+          <span class="icona"></span> Ricomincia da capo
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===== Parte principale ===== -->
+    <div class="principale">
+      <header class="barra-alta">
+        <div>
+          <h1 id="titolo-pagina">Ciao</h1>
+          <p id="sottotitolo-pagina"></p>
+        </div>
+        <div class="barra-alta-destra">
+          <button class="chiedi" id="bottone-assistente" type="button">
+            <span class="icona-scintilla"></span> Chiedi all'assistente…
+          </button>
+          <a class="icona-tonda" href="#promemoria" id="campanella" aria-label="Promemoria"></a>
+          <div class="profilo">
+            <div class="avatar" id="avatar">L</div>
+            <div class="profilo-testo"><strong id="nome-profilo">Luca</strong><small>Classe 4B</small></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- qui app.js disegna la sezione scelta -->
+      <main id="vista"></main>
+    </div>
+  </div>
+
+  <!-- bottone + sempre visibile: aggiunge un'attività al calendario -->
+  <button class="bottone-piu" id="bottone-piu" type="button" aria-label="Aggiungi al calendario"></button>
+
+  <!-- finestra che si apre sopra la pagina (moduli, dettagli) -->
+  <div class="modale" id="modale"></div>
+
+  <!-- L'ordine conta: prima i dati, poi la base, poi le sezioni, infine app.js -->
   <script src="dati-finti.js"></script>
-  <script src="app.js"></script>
+  <script src="js/base.js"></script>
+  <script src="js/sezioni/home.js"></script>
+  <script src="js/sezioni/calendario.js"></script>
+  <script src="js/sezioni/giornata.js"></script>
+  <script src="js/sezioni/settimana.js"></script>
+  <script src="js/sezioni/obiettivi.js"></script>
+  <script src="js/sezioni/lezioni.js"></script>
+  <script src="js/sezioni/quotidiane.js"></script>
+  <script src="js/sezioni/extra.js"></script>
+  <script src="js/sezioni/promemoria.js"></script>
+  <script src="js/sezioni/spese.js"></script>
+  <script src="js/sezioni/spesa.js"></script>
+  <script src="js/sezioni/routine.js"></script>
+  <script src="js/sezioni/mail.js"></script>
+  <script src="js/google.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
