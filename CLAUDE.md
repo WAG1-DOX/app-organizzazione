@@ -25,14 +25,44 @@ tramite gruppi. In più una chat tra di noi.
   - Effort `low` per le richieste semplici; Batch API per cose non urgenti.
 - Modello AI locale: scartato per ora (qualità più bassa, più lavoro). Forse in futuro.
 
-## Database (bozza)
-| Tabella | Contenuto |
+## Database — nomi dei campi (CONTRATTO: non cambiarli senza avvisare l'altro)
+Questi nomi li usano sia il database (Edoardo) sia l'app (Luca). Se uno li
+cambia, deve aggiornare questo file e dirlo all'altro.
+
+| Tabella | Campi |
 |---|---|
-| `profili` | nome, foto, preferenze |
-| `gruppi` | es. "Classe 4B", "Palestra" |
-| `membri_gruppo` | chi è in quale gruppo |
-| `eventi` | titolo, data, ora, tipo (scuola/allenamento/altro), proprietario, gruppo (vuoto = privato) |
-| `messaggi` | mittente, destinatario, testo, ora |
+| `profili` | `id` (uuid, = id dell'account), `nome`, `avatar_url`, `creato_il` |
+| `gruppi` | `id`, `nome`, `creato_da`, `creato_il` |
+| `membri_gruppo` | `gruppo_id`, `utente_id`, `ruolo` (`admin` / `membro`) |
+| `eventi` | `id`, `titolo`, `descrizione`, `tipo` (`scuola` / `allenamento` / `impegno` / `altro`), `inizio`, `fine` (data+ora ISO), `tutto_il_giorno` (true/false), `proprietario_id`, `gruppo_id` (null = privato), `completato` (true/false), `creato_il` |
+| `messaggi` | `id`, `mittente_id`, `destinatario_id`, `testo`, `evento_id` (opzionale), `letto` (true/false), `creato_il` |
+
+Esempio di evento come arriverà all'app (usare questa forma anche nei dati finti):
+```json
+{
+  "id": "e1",
+  "titolo": "Verifica di matematica",
+  "descrizione": "Capitoli 4 e 5",
+  "tipo": "scuola",
+  "inizio": "2026-11-12T08:00:00+01:00",
+  "fine": "2026-11-12T09:00:00+01:00",
+  "tutto_il_giorno": false,
+  "proprietario_id": "u-edoardo",
+  "gruppo_id": "g-classe",
+  "completato": false,
+  "creato_il": "2026-11-05T17:00:00+01:00"
+}
+```
+
+## Divisione del lavoro (cartelle separate = niente conflitti)
+- **Edoardo → database**: cartella `supabase/` (file SQL: tabelle, Row Level
+  Security, funzioni). Account e progetto Supabase.
+- **Luca → app e design**: cartella `app/` (HTML, CSS, JavaScript). Per ora
+  usa **dati finti** in `app/dati-finti.js` con esattamente i campi qui sopra;
+  quando il database è pronto si sostituiscono con le chiamate a Supabase.
+- Tecnologia app: HTML + CSS + JavaScript semplice (niente framework per ora),
+  poi la libreria `@supabase/supabase-js` per collegarsi al database.
+- `CLAUDE.md` lo possono modificare entrambi, ma solo per aggiornare decisioni.
 
 ## Regole di lavoro
 - Le chiavi segrete stanno solo in `.env` (escluso da git). Mai nel codice o su GitHub.
