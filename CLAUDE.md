@@ -64,6 +64,14 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
   poi la libreria `@supabase/supabase-js` per collegarsi al database.
 - `CLAUDE.md` lo possono modificare entrambi, ma solo per aggiornare decisioni.
 
+## Supabase
+- Progetto Supabase: **Xecute**, organizzazione "Edoardo e luca", regione
+  North EU (Stockholm), piano gratuito.
+- Il database si aggiorna **a mano** incollando il codice SQL nel SQL Editor.
+- L'integrazione GitHub di Supabase per ora **non è collegata**. Se un giorno
+  si collega: **NON creare la cartella `supabase/migrations/`** senza
+  decidere prima, perché Supabase eseguirebbe il codice da solo.
+
 ## Regole di lavoro
 - Le chiavi segrete stanno solo in `.env` (escluso da git). Mai nel codice o su GitHub.
 - Prima di lavorare: Pull. Dopo: Commit + Push (con GitHub Desktop).
@@ -73,7 +81,8 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 ## Stato
 - [x] Repository creato
 - [x] Struttura cartelle (`app/`, `supabase/`) e divisione del lavoro
-- [ ] Progetto Supabase
+- [x] Progetto Supabase
+- [x] Tabelle, sicurezza (RLS) e tempo reale: `supabase/schema.sql` eseguito su Supabase
 - [ ] Login e profili
 - [ ] Calendario ed eventi condivisi
 - [ ] Chat
