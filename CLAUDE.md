@@ -56,6 +56,8 @@ cambia, deve aggiornare questo file e dirlo all'altro.
 | `gruppi` | `id`, `nome`, `creato_da`, `creato_il` |
 | `membri_gruppo` | `gruppo_id`, `utente_id`, `ruolo` (`admin` / `membro`) |
 | `eventi` | `id`, `titolo`, `descrizione`, `tipo` (`scuola` / `allenamento` / `impegno` / `altro`), `inizio`, `fine` (data+ora ISO), `tutto_il_giorno` (true/false), `proprietario_id`, `gruppo_id` (null = privato), `completato` (true/false), `creato_il` |
+| `eventi` (aggiunti con `02_aggiornamento_luca.sql`) | tipo anche `produttivita`; campi nuovi `luogo` (testo, default ''), `colore` (es. `#f4511e`, vuoto = automatico), `google_id`, `google_calendario` |
+| `dati_personali` | `utente_id`, `chiave` (es. `movimenti`, `lista_spesa`, `sonno`…, elenco in `app/tabelle-nuove.md`), `valore` (JSON), `aggiornato_il`. Una riga per chiave per utente; ognuno vede solo le sue |
 | `messaggi` | `id`, `mittente_id`, `destinatario_id`, `testo`, `evento_id` (opzionale), `letto` (true/false), `creato_il` |
 
 Esempio di evento come arriverà all'app (usare questa forma anche nei dati finti):
@@ -109,7 +111,9 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 - [x] Struttura cartelle (`app/`, `supabase/`) e divisione del lavoro
 - [x] Progetto Supabase
 - [x] Tabelle, sicurezza (RLS) e tempo reale: `supabase/schema.sql` eseguito su Supabase
-- [ ] Login e profili
+- [x] Aggiornamento 2 (tipo produttivita, campi eventi, tabella `dati_personali`): `supabase/02_aggiornamento_luca.sql` eseguito
+- [ ] Login e profili (pagina di login fatta da Luca; da provare con due account)
+- [ ] App che salva i dati su Supabase invece che nel browser (Luca)
 - [ ] Calendario ed eventi condivisi
 - [ ] Chat
 - [ ] Integrazione Claude
