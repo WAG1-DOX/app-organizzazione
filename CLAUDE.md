@@ -3,6 +3,27 @@
 Progetto di **Edoardo** (GitHub: WAG1-DOX) e **Luca**. Siamo principianti: spiega
 le cose in modo semplice, in italiano, e fai un passo alla volta.
 
+## ⚠️ Claude: cose da ricordare a chi lavora (ogni sessione)
+Lavoriamo in due sullo stesso progetto con GitHub Desktop. Claude deve:
+1. **All'inizio di ogni sessione** chiedere: "Hai fatto Fetch origin e Pull
+   origin in GitHub Desktop?". Se no, farlo fare prima di toccare qualsiasi file.
+2. **Dopo un Pull**, rileggere `CLAUDE.md` e i file su cui si lavora: l'altro
+   potrebbe averli cambiati. Non fidarsi di quello che ricordi della conversazione.
+3. **Chiedere su cosa si lavora** e ricordare di avvisare l'altro su WhatsApp.
+   Edoardo → cartella `supabase/`; Luca → cartella `app/`. Se serve toccare
+   un file dell'altro o questo `CLAUDE.md`, dire di avvisarlo prima.
+4. **Quando una cosa funziona**, ricordare di salvare e mandare, in quest'ordine:
+   Commit to main → Fetch origin → (se compare) Pull origin → Push origin.
+   Meglio tanti invii piccoli che uno enorme.
+5. **Se c'è un conflitto**: niente panico, non si perde niente. Spiegare con
+   parole semplici quali sono le due versioni e far scegliere; non cancellare.
+6. **Mai** mettere nel codice password o chiavi segrete (secret/service_role key):
+   solo nel file `.env`, che non va su GitHub.
+7. **Mai** cambiare i nomi dei campi del database senza avvisare l'altro.
+8. **Mai** creare la cartella `supabase/migrations/`.
+9. **Mai** dire di cliccare *Undo* o di cancellare cose in GitHub Desktop
+   senza spiegare cosa succede.
+
 ## Cos'è
 App personale per organizzare la vita quotidiana: impegni, allenamenti, scuola.
 Due account separati (uno per Edoardo, uno per Luca) sullo **stesso database**.
