@@ -1433,3 +1433,30 @@ a.link { color: var(--accento); text-decoration: underline; text-underline-offse
 
 @media (max-width: 1280px) { .griglia-tre { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 860px) { .griglia-tre { grid-template-columns: minmax(0, 1fr); } }
+
+/* ============================================================
+   ACCESSO (login e registrazione)
+   ============================================================ */
+body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
+.accesso {
+  position: fixed; inset: 0; z-index: 100; overflow-y: auto;
+  display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+  background:
+    radial-gradient(700px 420px at 50% 115%, rgba(209, 254, 23, 0.16), transparent 70%),
+    radial-gradient(900px 500px at 80% -10%, rgba(209, 254, 23, 0.08), transparent 60%),
+    var(--sfondo);
+}
+.accesso-box {
+  width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 14px;
+  padding: 30px 28px; border-radius: 26px;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--bordo); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.accesso-logo { padding: 0; font-size: 18px; }
+.accesso-box h2 { margin: 6px 0 0; font-size: 26px; letter-spacing: -0.02em; }
+.accesso-schede { align-self: stretch; }
+.accesso-schede button { flex: 1; }
+.accesso-messaggio { margin: 0; min-height: 18px; font-size: 13px; color: var(--testo-leggero); line-height: 1.45; }
+.accesso-messaggio.errore { color: var(--rosso); }
+.accesso-messaggio.ok { color: var(--verde); }
+.accesso-link { align-self: center; border: none; background: none; margin-top: 0; }

@@ -164,12 +164,15 @@ document.getElementById("bottone-assistente").addEventListener("click", () =>
     h("p", { class: "testo-leggero" }, "Qui potrai scrivere cose come «domani palestra alle 18 per un'ora» e l'assistente le metterà in calendario da solo."),
     h("p", { class: "testo-leggero" }, "Lo colleghiamo dopo il database, con Claude Haiku tramite una funzione di Supabase (come deciso in CLAUDE.md).")));
 
-document.getElementById("avatar").textContent = utenteAttuale.nome[0];
-document.getElementById("nome-profilo").textContent = utenteAttuale.nome;
+const bottoneEsci = document.getElementById("bottone-esci");
+bottoneEsci.querySelector(".icona").replaceWith(icona("frecciaSu", 18));
+bottoneEsci.addEventListener("click", esci);
 
 disegnaMenu();
 window.addEventListener("hashchange", disegna);
-disegna();
+
+// Prima il login: l'app si disegna solo quando sei dentro con il tuo account
+avviaAccesso(() => disegna());
 
 // Se Google Calendar è già stato configurato, prepariamo subito il suo script
 // (così quando tocchi "Collega" la finestra di Google si apre senza attese)

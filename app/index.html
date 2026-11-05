@@ -24,6 +24,9 @@
       <div class="mini-calendario" id="mini-calendario"></div>
 
       <div class="barra-fondo">
+        <button class="menu-voce" id="bottone-esci" type="button">
+          <span class="icona"></span> Esci
+        </button>
         <button class="menu-voce" id="bottone-reset" type="button" title="Cancella i dati salvati nel browser e torna ai dati finti">
           <span class="icona"></span> Ricomincia da capo
         </button>
@@ -44,7 +47,7 @@
           <a class="icona-tonda" href="#promemoria" id="campanella" aria-label="Promemoria"></a>
           <div class="profilo">
             <div class="avatar" id="avatar">L</div>
-            <div class="profilo-testo"><strong id="nome-profilo">Luca</strong><small>Classe 4B</small></div>
+            <div class="profilo-testo"><strong id="nome-profilo">…</strong><small id="email-profilo"></small></div>
           </div>
         </div>
       </header>
@@ -61,6 +64,9 @@
   <div class="modale" id="modale"></div>
 
   <!-- L'ordine conta: prima i dati, poi la base, poi le sezioni, infine app.js -->
+  <!-- libreria ufficiale di Supabase (per login e database) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
   <script src="dati-finti.js"></script>
   <script src="js/base.js"></script>
   <script src="js/sezioni/home.js"></script>
@@ -77,6 +83,7 @@
   <script src="js/sezioni/routine.js"></script>
   <script src="js/sezioni/mail.js"></script>
   <script src="js/google.js"></script>
+  <script src="js/accesso.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
