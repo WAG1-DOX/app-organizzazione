@@ -67,6 +67,11 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 ## Supabase
 - Progetto Supabase: **Xecute**, organizzazione "Edoardo e luca", regione
   North EU (Stockholm), piano gratuito.
+- Project URL: `https://jpesiyylptdfkdgdxrqt.supabase.co` (pubblico, può stare nell'app).
+  La publishable/anon key si prende da Project Settings → API Keys (pubblica);
+  la secret/service_role key **mai** nell'app né su GitHub.
+- Team Supabase: Edoardo (Owner), Luca (Developer, invitato).
+- Login: provider Email attivo, "Confirm email" attivo (arriva un link di conferma).
 - Il database si aggiorna **a mano** incollando il codice SQL nel SQL Editor.
 - L'integrazione GitHub di Supabase per ora **non è collegata**. Se un giorno
   si collega: **NON creare la cartella `supabase/migrations/`** senza
