@@ -112,7 +112,11 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 - [x] Progetto Supabase
 - [x] Tabelle, sicurezza (RLS) e tempo reale: `supabase/schema.sql` eseguito su Supabase
 - [x] Aggiornamento 2 (tipo produttivita, campi eventi, tabella `dati_personali`): `supabase/02_aggiornamento_luca.sql` eseguito
-- [ ] Login e profili (pagina di login fatta da Luca; da provare con due account)
+- [x] Sicurezza: `supabase/03_sicurezza.sql` eseguito (Security Advisor: 0 errori; resta solo
+      "leaked password protection", disponibile solo col piano Pro). Le funzioni dei lucchetti
+      ora sono `privato.sono_membro(uuid)` e `privato.sono_admin(uuid)`: nel nuovo SQL usare questi nomi.
+- [x] URL di login: Site URL `http://localhost:5500`, redirect `http://localhost:*/**`
+- [ ] Login e profili (pagina di login fatta da Luca; account di Edoardo creato e confermato; manca Luca)
 - [ ] App che salva i dati su Supabase invece che nel browser (Luca)
 - [ ] Calendario ed eventi condivisi
 - [ ] Chat
