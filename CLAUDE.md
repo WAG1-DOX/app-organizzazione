@@ -25,14 +25,28 @@ tramite gruppi. In più una chat tra di noi.
   - Effort `low` per le richieste semplici; Batch API per cose non urgenti.
 - Modello AI locale: scartato per ora (qualità più bassa, più lavoro). Forse in futuro.
 
-## Database (bozza)
-| Tabella | Contenuto |
+## Database
+Questi nomi sono il "patto" tra interfaccia e database: si usano uguali in
+`web/` e in `supabase/`. Per cambiarne uno, Luca ed Edoardo si avvisano prima.
+
+| Tabella | Campi |
 |---|---|
-| `profili` | nome, foto, preferenze |
-| `gruppi` | es. "Classe 4B", "Palestra" |
-| `membri_gruppo` | chi è in quale gruppo |
-| `eventi` | titolo, data, ora, tipo (scuola/allenamento/altro), proprietario, gruppo (vuoto = privato) |
-| `messaggi` | mittente, destinatario, testo, ora |
+| `profili` | `id`, `nome`, `foto`, `preferenze` |
+| `gruppi` | `id`, `nome` (es. "Classe 4B", "Palestra") |
+| `membri_gruppo` | `gruppo`, `utente` |
+| `eventi` | `id`, `titolo`, `data` (AAAA-MM-GG), `ora` (HH:MM), `tipo` (`scuola` / `allenamento` / `altro`), `proprietario` (id utente), `gruppo` (id gruppo, vuoto = privato) |
+| `messaggi` | `id`, `mittente`, `destinatario`, `testo`, `ora` |
+
+## Divisione del lavoro
+| Chi | Cosa | Cartella |
+|---|---|---|
+| **Luca** | Interfaccia: HTML, CSS, JavaScript, design | `web/` |
+| **Edoardo** | Database Supabase: tabelle, sicurezza, login | `supabase/` |
+
+- Ognuno modifica solo la sua cartella. `CLAUDE.md` e `README.md` sono in comune:
+  modificarli solo dopo essersi accordati.
+- Finché il database non è pronto, `web/` usa `web/dati-finti.js` (stessi nomi
+  dei campi). Poi si sostituisce con Supabase.
 
 ## Regole di lavoro
 - Le chiavi segrete stanno solo in `.env` (escluso da git). Mai nel codice o su GitHub.
@@ -42,6 +56,7 @@ tramite gruppi. In più una chat tra di noi.
 
 ## Stato
 - [x] Repository creato
+- [x] Struttura cartelle (`web/`, `supabase/`) e divisione del lavoro
 - [ ] Progetto Supabase
 - [ ] Login e profili
 - [ ] Calendario ed eventi condivisi

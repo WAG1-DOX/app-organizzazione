@@ -1,0 +1,8 @@
+/* Stile di base: il design vero lo fai tu, Luca. */
+
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+}
