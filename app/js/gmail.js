@@ -83,7 +83,7 @@ class ErroreGmail extends Error {
   constructor(messaggio, tipo) { super(messaggio); this.tipo = tipo; }
 }
 
-async function gmail(metodo, percorso, corpo, tentativo = 0) {
+async function gmail(metodo, percorso, corpo, tentativo = 0, rinnovato = false) {
   if (typeof googleDalServer !== "function" || !googleDalServer()) throw new ErroreGmail("Google non è configurato sul server.", "spento");
   await assicuraToken();
   const r = await fetch(`${API_GMAIL}${percorso}`, {
@@ -91,16 +91,26 @@ async function gmail(metodo, percorso, corpo, tentativo = 0) {
     headers: { Authorization: `Bearer ${Google.token}`, ...(corpo ? { "Content-Type": "application/json" } : {}) },
     body: corpo ? JSON.stringify(corpo) : undefined,
   });
-  if (r.status === 401 && tentativo < 1) { Google.token = null; return gmail(metodo, percorso, corpo, tentativo + 1); }
-  if ((r.status === 429 || r.status >= 500) && tentativo < 3) {
-    await new Promise((ok) => setTimeout(ok, 800 * 2 ** tentativo + Math.random() * 300));
-    return gmail(metodo, percorso, corpo, tentativo + 1);
+  if (r.status === 401 && !rinnovato) { Google.token = null; return gmail(metodo, percorso, corpo, tentativo, true); }
+  // Gmail risponde 403 anche quando gli chiediamo troppe cose insieme ("rate limit"):
+  // leggiamo il motivo, così "rallenta" non viene scambiato per "manca il permesso".
+  let motivo = "";
+  if (r.status === 403) { try { const e = await r.json(); motivo = JSON.stringify(e.error || e); } catch (e) {} }
+  const troppe = r.status === 429 || (r.status === 403 && /rateLimitExceeded|userRateLimitExceeded|quotaExceeded|RATE_LIMIT/i.test(motivo));
+  if ((troppe || r.status >= 500) && tentativo < 4) {
+    await new Promise((ok) => setTimeout(ok, 1000 * 2 ** tentativo + Math.random() * 500));
+    return gmail(metodo, percorso, corpo, tentativo + 1, rinnovato);
   }
+  if (troppe) throw new ErroreGmail("Gmail chiede di rallentare: riprova tra un minuto.", "errore");
   if (r.status === 403 || r.status === 401) {
-    let motivo = "";
-    try { const e = await r.json(); motivo = JSON.stringify(e.error || e); } catch (e) {}
     if (/SERVICE_DISABLED|accessNotConfigured|has not been used|is disabled/i.test(motivo)) {
       throw new ErroreGmail("Le API di Gmail non sono attive nel progetto Google.", "api-spenta");
+    }
+    // Il permesso in memoria può essere uno vecchio (solo calendario): prima di dire "ricollega"
+    // ne chiediamo uno nuovo al server, che magari ha già anche Gmail.
+    if (!rinnovato && collegatoSulServer()) {
+      Google.token = null;
+      return gmail(metodo, percorso, corpo, tentativo, true);
     }
     throw new ErroreGmail("Manca il permesso per Gmail.", "manca-permesso");
   }
@@ -247,8 +257,13 @@ async function aggiornaPosta(forza = false) {
       idDaRicerca(`in:inbox is:unread newer_than:${GIORNI_INBOX}d`, MAX_INBOX),
     ]);
     const note = new Map(Posta.mail.map((m) => [m.id, m]));
+<<<<<<< Updated upstream
     const nuove = idInbox.filter((id) => !note.has(id) || note.get(id).v !== VERSIONE_MAIL);
     const lette = await aPiccoliGruppi(nuove, 8, leggiIntestazioni);
+=======
+    const nuove = idInbox.filter((id) => !note.has(id));
+    const lette = await aPiccoliGruppi(nuove, 5, leggiIntestazioni);   // 5 alla volta: sotto il limite di Gmail
+>>>>>>> Stashed changes
     for (const g of lette) if (g) note.set(g.id, mailDaGmail(g));
     const nonLette = new Set(idNonLette);
     Posta.mail = idInbox.map((id) => note.get(id)).filter(Boolean).map((m) => {

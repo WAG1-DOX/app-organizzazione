@@ -152,19 +152,26 @@ Deno.serve(async (req) => {
         if (!SCOPE_NECESSARI.every((s) => concessi.includes(s))) {
           throw new ErroreUtente("Nella finestra di Google devi spuntare tutti i permessi del calendario.");
         }
-        // il refresh token arriva solo se nella finestra hai confermato il consenso
-        let refresh = t.refresh_token ?? "";
-        if (!refresh) {
-          const vecchia = await miaRiga();
-          if (!vecchia) throw new ErroreUtente("Google non ha dato il permesso a lungo termine: riprova e conferma tutto nella finestra.");
-          refresh = await decifra(vecchia.refresh_cifrato);
-        }
         // l'email dell'account = id del calendario principale
         let email: string | null = null;
         try {
           const r = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList/primary", { headers: { Authorization: `Bearer ${t.access_token}` } });
           if (r.ok) email = (await r.json()).id ?? null;
         } catch { /* non importa */ }
+        // il refresh token arriva solo se nella finestra hai confermato il consenso.
+        // Se non arriva, riusiamo quello vecchio SOLO se è dello stesso account Google:
+        // altrimenti si mescolerebbero due account (dopo un'ora tornerebbe quello vecchio).
+        let refresh = t.refresh_token ?? "";
+        if (!refresh) {
+          const vecchia = await miaRiga();
+          const stessoAccount = !!vecchia && !!email && String(vecchia.email ?? "").toLowerCase() === email.toLowerCase();
+          if (!stessoAccount) {
+            throw new ErroreUtente(
+              "Google non ha dato il permesso a lungo termine per questo account. Vai su myaccount.google.com/connections, " +
+              "togli X-ECUTE da questo account e collegalo di nuovo.");
+          }
+          refresh = await decifra(vecchia!.refresh_cifrato);
+        }
         const { error } = await admin.from("google_collegamenti").upsert({
           utente_id: user.id, refresh_cifrato: await cifra(refresh), email, aggiornato_il: new Date().toISOString(),
         });
