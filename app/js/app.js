@@ -9,6 +9,7 @@ const SEZIONI = [
   { id: "lezioni", nome: "Lezioni", icona: "scuola", descrizione: "Solo H-Farm: lezioni, esami e scadenze" },
   { id: "quotidiane", nome: "Quotidiane e nutrizione", icona: "sole", descrizione: "Le attività di ogni giorno, acqua e pasti" },
   { id: "extra", nome: "Attività extra", icona: "stella", descrizione: "Allenamenti e attività salvate, da mettere in calendario col +" },
+  { id: "chat", nome: "Chat e gruppi", icona: "persone", descrizione: "Scrivi agli amici e crea gruppi (es. la classe) per condividere gli eventi" },
   { id: "promemoria", nome: "Promemoria", icona: "campana", descrizione: "Le cose da non dimenticare" },
   { id: "spese", nome: "Spese", icona: "portafoglio", descrizione: "Entrate, uscite e budget del mese" },
   { id: "spesa", nome: "Lista della spesa", icona: "carrello", descrizione: "Cosa comprare e foto degli scontrini" },
@@ -46,6 +47,7 @@ function disegna() {
 
   disegnaMiniCalendario();
   aggiornaCampanella();
+  aggiornaBadgeChat();
 }
 
 // Da chiamare dopo ogni modifica ai dati: salva e ridisegna, senza far saltare la pagina
@@ -217,6 +219,12 @@ function apriAssistente() {
   domanda.focus();
 }
 
+// Sul telefono la barra con "Esci" è nascosta: toccando l'avatar si può uscire lo stesso
+const avatar = document.getElementById("avatar");
+avatar.title = "Esci dall'account";
+avatar.style.cursor = "pointer";
+avatar.addEventListener("click", esci);
+
 const bottoneEsci = document.getElementById("bottone-esci");
 bottoneEsci.querySelector(".icona").replaceWith(icona("frecciaSu", 18));
 bottoneEsci.addEventListener("click", esci);
@@ -229,6 +237,8 @@ window.addEventListener("hashchange", disegna);
 avviaAccesso(async () => {
   await avviaCloud();
   disegna();
+  // gruppi e messaggi (chat.js): li scarichiamo subito, così il pallino dei non letti è giusto
+  caricaSocial().then(ridisegnaChat);
 });
 
 // Se Google Calendar è già stato configurato, prepariamo subito il suo script

@@ -138,11 +138,15 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 - [x] URL di login: Site URL `http://localhost:5500`, redirect `http://localhost:*/**`
 - [ ] Login e profili (pagina di login fatta da Luca; account di Edoardo creato e confermato; manca Luca)
 - [x] App che salva i dati su Supabase (fatto da Edoardo il 6 nov, file `app/js/sincronizza.js`, provato)
-- [ ] Calendario ed eventi condivisi
-- [ ] Chat
+- [x] Gruppi con codice di invito: `supabase/04_gruppi.sql` (colonna `gruppi.codice` + funzione
+      `entra_nel_gruppo(codice_invito)`) — eseguito il 6 nov, provato
+- [x] Gruppi veri nel calendario: il menu "Visibile a" usa `gruppiDisponibili()` (chat.js)
+- [x] Chat: pagina "Chat e gruppi" (`app/js/sezioni/chat.js`): persone = chi è in un gruppo con te,
+      messaggi in tempo reale (Supabase Realtime), pallino dei non letti nel menu, creare/entrare/uscire
+      dai gruppi. Provata da Edoardo il 6 nov (con un solo account: manca la prova a due)
 - [x] Integrazione Claude lato server: funzione `assistente` provata, risponde in ~4 secondi
 - [x] Pulsante "Chiedi all'assistente…" collegato alla funzione (`apriAssistente` in `app/js/app.js`)
-- [ ] Sul telefono il pulsante dell'assistente è nascosto (`.chiedi { display: none }` in style.css)
+- [x] Sul telefono l'assistente è un bottone rotondo con la scintilla; toccando l'avatar si esce
 - [ ] Foto degli scontrini: restano solo nel browser (IndexedDB), non ancora su Supabase Storage
 
 ## Salvataggio su Supabase (`app/js/sincronizza.js`)
