@@ -253,7 +253,10 @@ window.addEventListener("hashchange", disegna);
 // Poi scarica i tuoi dati dal database (sincronizza.js) e disegna.
 avviaAccesso(async () => {
   await avviaCloud();
+  // di ritorno dal sito della banca? (?code=…&state=…) → completiamo il collegamento
+  if (typeof gestisciRitornoBanca === "function") await gestisciRitornoBanca();
   disegna();
+  if (typeof aggiornaBanca === "function") aggiornaBanca(false);   // movimenti nuovi (al massimo ogni 6 ore)
   // la prima volta (o dopo la pulizia dei dati di esempio): configurazione guidata
   if (serveConfigurazione()) apriConfigurazione();
   // gruppi e messaggi (chat.js): li scarichiamo subito, così il pallino dei non letti è giusto

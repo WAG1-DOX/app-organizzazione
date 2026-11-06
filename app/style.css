@@ -1615,3 +1615,15 @@ body.in-configurazione { overflow: hidden; }
   .configura-box h2 { font-size: 22px; }
   .configura-piede { bottom: -20px; }
 }
+
+/* ===== Banche collegate e import CSV (banca.js) ===== */
+.avviso-ok { margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; background: rgba(209, 254, 23, 0.10); color: var(--accento); font-size: 13px; }
+.avviso-errore.piccolo { font-size: 12px; padding: 8px 10px; }
+.azioni-banca { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.azioni-banca button { white-space: normal; }
+.riga-banca .riga-testo small { display: block; }
+.elenco-banche { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.elenco-banche .scelta { width: 100%; }
+.anteprima-csv li { padding: 6px 0; }
+.link-categoria { background: none; border: none; padding: 0; color: inherit; font: inherit; text-decoration: underline dotted; cursor: pointer; }
+.link-categoria:hover { color: var(--accento); }

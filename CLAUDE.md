@@ -148,6 +148,7 @@ Esempio di evento come arriverà all'app (usare questa forma per tutti gli event
 - [x] Pulsante "Chiedi all'assistente…" collegato alla funzione (`apriAssistente` in `app/js/app.js`)
 - [x] Sul telefono l'assistente è un bottone rotondo con la scintilla; toccando l'avatar si esce
 - [ ] Foto degli scontrini: restano solo nel browser (IndexedDB), non ancora su Supabase Storage
+- [ ] Banche: eseguire `supabase/06_banca.sql`, mettere il segreto `BANCA_SEGRETO`, pubblicare la funzione `banca` (Edoardo)
 
 ## Sito online
 - Indirizzo: **https://xecute-app.vercel.app** (Vercel, piano gratuito, collegato al repository; pubblica la cartella `app/`).
@@ -155,6 +156,21 @@ Esempio di evento come arriverà all'app (usare questa forma per tutti gli event
   perché il progetto Vercel è di Edoardo. Con il repository pubblico ogni Push di tutti e due va online da solo.
 - Quindi nel codice: **mai** segreti (solo la chiave pubblica di Supabase). Controllato il 6 nov: la storia è pulita.
 - Indirizzo aggiunto anche su Google Cloud (origini del Client ID) e su Supabase (URL Configuration).
+
+## Banche collegate (Enable Banking) — `app/js/banca.js` + funzione `banca`
+- Enable Banking gratis in modalità **restricted**: ognuno ha la SUA applicazione (Production) e può
+  leggere SOLO i conti che ha collegato lui. Solo uso personale: per altri utenti servirebbe un contratto.
+- Luca: applicazione "X-ECUTE Luca" attiva, Revolut (paese LT) + Fideuram (IT) collegati dal Control Panel.
+  Edoardo: da fare (Fineco IT + Revolut LT). Redirect URL dell'applicazione: `https://xecute-app.vercel.app/`.
+- Il file `.pem` (chiave privata) NON va mai nel progetto, in chat o su GitHub: si carica una volta
+  dall'app (Spese → Configura Enable Banking) e la funzione lo salva **cifrato** (segreto `BANCA_SEGRETO`).
+- Supabase: `supabase/06_banca.sql` (tabelle `banca_chiavi`, `banca_collegamenti`, `banca_attese`) e la
+  Edge Function `supabase/functions/banca/index.ts` (azioni: stato, salva_chiave, elimina_chiave, banche,
+  collega, completa, movimenti, scollega). Scritti dal Claude di Luca: li esegue/pubblica Edoardo.
+- Nell'app: i movimenti arrivano in `stato.movimenti` con `fonte: "banca"` (id `eb-…`) o `"csv"` (id `csv-…`),
+  categoria indovinata, senza doppioni; `giroconto: true` = soldi tra due propri conti (non conta nei totali).
+  `stato.banca = { attiva, ignorati }` (chiave cloud `banca`): `ignorati` = movimenti importati e poi eliminati.
+- Piano B: Spese → "Importa estratto conto (CSV)" (Revolut, Fineco, Fideuram… colonne riconosciute da sole).
 
 ## Salvataggio su Supabase (`app/js/sincronizza.js`)
 - Il browser tiene una copia (localStorage); dopo il login comandano i dati del database.

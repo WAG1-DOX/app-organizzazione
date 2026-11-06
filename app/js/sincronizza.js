@@ -20,6 +20,7 @@ const CHIAVI_CLOUD = {
   giornate: "giornate", obiettivi: "obiettivi_settimana", sonno: "sonno",
   categorieObiettivi: "categorie_obiettivi", obiettiviLungo: "obiettivi_lungo",
   configurazione: "configurazione",   // configurazione guidata fatta o no (vedi configurazione.js)
+  banca: "banca",                     // banche collegate: { attiva, ignorati } (vedi banca.js)
 };
 // di Google salviamo solo le scelte (Client ID e calendari da mostrare), non il permesso
 const CHIAVE_GOOGLE = "google_impostazioni";

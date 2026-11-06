@@ -36,7 +36,7 @@ Viste.spese = function (box) {
 
   // ---------- Budget per categoria ----------
   const perCategoria = {};
-  for (const m of t.lista) if (m.tipo === "uscita") perCategoria[m.categoria] = (perCategoria[m.categoria] || 0) + m.importo;
+  for (const m of t.lista) if (m.tipo === "uscita" && !m.giroconto) perCategoria[m.categoria] = (perCategoria[m.categoria] || 0) + m.importo;
 
   const categorie = pannello("", "Budget per categoria",
     h("button", { class: "pill", type: "button", title: "Cambia il budget", onclick: apriModificaBudget },
@@ -94,19 +94,23 @@ Viste.spese = function (box) {
       ? h("ul", { class: "lista-movimenti" }, lista.map((m) =>
           h("li", {},
             h("span", { class: `cerchio-icona ${m.tipo === "entrata" ? "positivo" : ""}` }, icona(m.tipo === "entrata" ? "frecciaSu" : "frecciaGiu", 16)),
-            h("span", { class: "riga-testo" }, h("strong", {}, m.descrizione), h("small", {}, `${m.categoria} · ${dataBreve(daChiave(m.data))}`)),
-            h("strong", { class: m.tipo === "entrata" ? "testo-verde" : "" }, `${m.tipo === "entrata" ? "+" : "−"}${euro(m.importo)}`),
+            h("span", { class: "riga-testo" }, h("strong", {}, m.descrizione),
+              h("small", {},
+                h("button", { class: "link-categoria", type: "button", title: "Cambia categoria", onclick: () => apriCategoriaMovimento(m) }, m.categoria),
+                ` · ${dataBreve(daChiave(m.data))}`, m.conto && ` · ${m.conto}`, m.giroconto && " · non conta")),
+            h("strong", { class: m.giroconto ? "testo-leggero" : m.tipo === "entrata" ? "testo-verde" : "" }, `${m.tipo === "entrata" ? "+" : "−"}${euro(m.importo)}`),
             m.scontrino_id && stato.scontrini.some((s) => s.id === m.scontrino_id) &&
               h("button", { class: "icona-tonda piccola", type: "button", "aria-label": "Vedi lo scontrino", title: "Vedi lo scontrino",
                 onclick: () => apriScontrino(stato.scontrini.find((s) => s.id === m.scontrino_id)) }, icona("scontrino", 14)),
             h("button", { class: "icona-tonda piccola fantasma", type: "button", "aria-label": "Elimina movimento", onclick: () => {
+              ricordaEliminato(m);   // se arrivava dalla banca o dal CSV, non lo reimportiamo
               stato.movimenti = stato.movimenti.filter((x) => x.id !== m.id);
               aggiorna();
             } }, icona("cestino", 14)))))
       : h("p", { class: "vuoto" }, "Nessun movimento in questo mese"));
 
   box.append(numeri, h("div", { class: "griglia-due larga-sinistra" },
-    h("div", { class: "colonna" }, grafico, categorie), movimenti));
+    h("div", { class: "colonna" }, grafico, categorie), h("div", { class: "colonna" }, pannelloBanche(), movimenti)));
 };
 
 // ---------- Cambiare il budget: un importo per ogni categoria (il totale è la somma) ----------

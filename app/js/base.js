@@ -95,6 +95,7 @@ function statoIniziale() {
     obiettiviLungo: [],
     // configurazione guidata: completata = già fatta; dal = giorno da cui contano Monitor e punteggi
     configurazione: { completata: false, dal: oggiChiave() },
+    banca: { attiva: false, ignorati: [] },   // banche collegate (banca.js): attiva = Enable Banking configurato
   };
 }
 
@@ -367,7 +368,7 @@ function quotaQuotidiane(k) {
 }
 
 const usciteDelGiorno = (k) =>
-  stato.movimenti.filter((m) => m.tipo === "uscita" && m.data === k).reduce((s, m) => s + m.importo, 0);
+  stato.movimenti.filter((m) => m.tipo === "uscita" && m.data === k && !m.giroconto).reduce((s, m) => s + m.importo, 0);
 
 const giorniNelMese = (anno, mese) => new Date(anno, mese + 1, 0).getDate();
 // Categorie delle uscite: quelle del tuo budget (o, se non l'hai ancora fatto, alcune di base)
@@ -386,8 +387,10 @@ function movimentiDelMese(anno, mese) {
 
 function totaliMese(anno, mese) {
   const lista = movimentiDelMese(anno, mese);
-  const entrate = lista.filter((m) => m.tipo === "entrata").reduce((s, m) => s + m.importo, 0);
-  const uscite = lista.filter((m) => m.tipo === "uscita").reduce((s, m) => s + m.importo, 0);
+  // i giroconti (soldi spostati tra due tuoi conti) si vedono nell'elenco ma non contano nei totali
+  const veri = lista.filter((m) => !m.giroconto);
+  const entrate = veri.filter((m) => m.tipo === "entrata").reduce((s, m) => s + m.importo, 0);
+  const uscite = veri.filter((m) => m.tipo === "uscita").reduce((s, m) => s + m.importo, 0);
   return { entrate, uscite, saldo: entrate - uscite, lista };
 }
 
@@ -560,7 +563,7 @@ function puntiSaldoMese(anno, mese) {
     const d = new Date(anno, mese, g);
     const k = chiaveGiorno(d);
     if (k > oggiK) break;
-    for (const m of stato.movimenti) if (m.data === k) saldo += m.tipo === "entrata" ? m.importo : -m.importo;
+    for (const m of stato.movimenti) if (m.data === k && !m.giroconto) saldo += m.tipo === "entrata" ? m.importo : -m.importo;
     punti.push({ etichetta: String(g), etichettaLunga: dataBreve(d), valore: Math.round(saldo * 100) / 100 });
   }
   return punti;
