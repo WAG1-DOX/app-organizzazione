@@ -60,7 +60,12 @@ Descrizione originale:
 - Edoardo: tabella per salvare i messaggi della chat (ognuno vede solo i suoi) e funzione che
   riceve la conversazione del giorno.
 
-## Blocco 3 — Bot Telegram con vocali  · Edoardo
+## Blocco 3 — Bot Telegram con vocali  · Edoardo — 🟡 IN CORSO (6 nov 2026)
+Fatto: `supabase/09_telegram.sql` eseguito (telegram_codici, telegram_collegamenti, uso_assistente +
+`conta_domanda`: max 40 domande/giorno a testa); funzione `assistente` gestisce anche Telegram e l'azione
+`trascrivi` (Groq); **microfono nell'app** (chat-assistente.js → `registraVoce`: tocca, parla, ritocca →
+trascrive con Groq e manda); riquadro "Collega Telegram" sotto ☰ (si vede solo se il bot è attivo).
+Manca: segreto `GROQ_API_KEY`; per il bot anche `TELEGRAM_TOKEN` e "Verify JWT" spento sulla funzione.
 - Un bot "X-ECUTE" su Telegram: gli scrivi o gli mandi un **vocale**.
 - Il vocale viene trascritto (servizio **Groq**, gratis) e passato all'assistente del Blocco 1,
   che spunta le caselle / crea il promemoria e risponde su Telegram.
