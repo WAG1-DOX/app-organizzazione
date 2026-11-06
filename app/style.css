@@ -87,7 +87,8 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 }
 
 .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; padding: 0 10px; display: flex; gap: 10px; align-items: center; }
-.logo-segno { color: var(--accento); font-size: 18px; }
+.logo-segno { width: 30px; height: 30px; display: block; flex-shrink: 0; }
+.logo-nome { font-style: italic; font-weight: 800; letter-spacing: 0.04em; color: #c6f31a; }
 
 .menu { display: flex; flex-direction: column; gap: 4px; }
 
@@ -1456,6 +1457,14 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
   border: 1px solid var(--bordo); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .accesso-logo { padding: 0; font-size: 18px; }
+/* logo grande in cima alla scatola di login, da bordo a bordo, che sfuma in basso */
+.accesso-copertina {
+  display: block; width: calc(100% + 56px); margin: -30px -28px 0;
+  aspect-ratio: 1200 / 670; object-fit: cover;
+  border-radius: 26px 26px 0 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent);
+  mask-image: linear-gradient(to bottom, #000 75%, transparent);
+}
 .accesso-box h2 { margin: 6px 0 0; font-size: 26px; letter-spacing: -0.02em; }
 .accesso-schede { align-self: stretch; }
 .accesso-schede button { flex: 1; }

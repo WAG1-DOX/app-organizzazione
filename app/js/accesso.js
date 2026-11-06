@@ -130,7 +130,7 @@ function mostraAccesso(errore, quandoDentro) {
 
   const schermata = h("div", { class: "accesso", id: "accesso" },
     h("div", { class: "accesso-box" },
-      h("div", { class: "logo accesso-logo" }, h("span", { class: "logo-segno" }, "◆"), " Organizza"),
+      h("img", { class: "accesso-copertina", src: "img/logo-grande.jpg", alt: "XECUTE" }),
       h("h2", {}, modoAccesso === "accedi" ? "Bentornato" : modoAccesso === "registrati" ? "Crea il tuo account" : "Password dimenticata"),
       h("p", { class: "testo-leggero" }, modoAccesso === "recupero"
         ? "Scrivi la tua email: ti mandiamo un link per scegliere una nuova password."
