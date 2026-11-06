@@ -100,6 +100,26 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
   si collega: **NON creare la cartella `supabase/migrations/`** senza
   decidere prima, perché Supabase eseguirebbe il codice da solo.
 
+## Assistente AI ("cervello") — FUNZIONA
+- Edge Function Supabase **`assistente`** (codice: `supabase/functions/assistente/index.ts`,
+  di Edoardo). Pubblicata dal pannello di Supabase (Edge Functions → assistente → Code →
+  Deploy updates), non con la cartella migrations.
+- Modello: `claude-haiku-5-5`, effort `low`. Per cambiarlo: costante `MODELLO` in cima al file.
+  Le regole dell'assistente sono nella costante `ISTRUZIONI` (da riscrivere quando avremo
+  deciso bene cosa deve fare).
+- Legge da sola gli eventi dell'utente dei prossimi 7 giorni (+ gruppi) dalla tabella `eventi`.
+- Chiave di Claude: segreto `ANTHROPIC_API_KEY` in Supabase (chiave "Non collegata/legacy").
+  **Mai** nel codice, mai in chat, mai negli screenshot.
+- **Come la chiama l'app (Luca)**, dopo il login:
+  ```js
+  const { data, error } = await sb.functions.invoke("assistente", {
+    body: { domanda: "Organizzami la settimana" },
+  });
+  // data.risposta = testo della risposta (italiano, può avere elenchi con "-")
+  // se error: mostrare un messaggio tipo "L'assistente non risponde, riprova"
+  ```
+  Mentre aspetta (1-5 secondi) mostrare un caricamento. Domanda max 2000 caratteri.
+
 ## Regole di lavoro
 - Le chiavi segrete stanno solo in `.env` (escluso da git). Mai nel codice o su GitHub.
 - Prima di lavorare: Pull. Dopo: Commit + Push (con GitHub Desktop).
@@ -120,4 +140,5 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 - [ ] App che salva i dati su Supabase invece che nel browser (Luca)
 - [ ] Calendario ed eventi condivisi
 - [ ] Chat
-- [ ] Integrazione Claude
+- [x] Integrazione Claude lato server: funzione `assistente` provata, risponde in ~4 secondi
+- [ ] Pulsante "Chiedi all'assistente…" collegato alla funzione (Luca)
