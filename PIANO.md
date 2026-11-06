@@ -29,7 +29,15 @@ li cambia senza dirlo.
 
 Dopo: le altre azioni (creare eventi, segnare spese) quando queste due funzionano bene.
 
-## Blocco 2 — Chat dell'assistente in stile Gemini  · Luca (schermata) + Edoardo (salvataggio)
+## Blocco 2 — Chat dell'assistente in stile Gemini — ✅ FATTO (6 nov 2026, da Edoardo)
+`app/js/chat-assistente.js` (finestra che sale dal basso, metà schermo sul telefono, in basso a
+destra sul computer; logo, saluto, suggerimenti, messaggi a catena, dettatura vocale del browser,
+storico dal ☰) + stile in fondo a `style.css`. Tabella `chat_assistente` (`supabase/08_chat_assistente.sql`):
+la funzione `assistente` legge da sola la chat di oggi (ultimi 20 messaggi) e salva domanda e risposta.
+Provato: domanda di seguito ("e a che ora finisce?") capita grazie alla chat salvata.
+La vecchia finestrella in app.js è stata tolta (apriAssistente ora è in chat-assistente.js).
+
+Descrizione originale:
 - Toccando "Chiedi all'assistente…" si apre **una finestra dal basso, metà telefono**
   (sul computer: finestra in basso a destra). Si può tirare su a tutto schermo.
 - Finestra vuota: **logo X al centro**, sotto "Ciao Edoardo, come posso aiutarti?" e

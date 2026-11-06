@@ -279,23 +279,29 @@ Deno.serve(async (req) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return risposta({ errore: "Devi fare il login." }, 401);
 
-  // 2. Il messaggio (e, facoltativa, la chat di oggi: [{ ruolo: "utente"|"assistente", testo }])
+  // 2. Il messaggio. La chat di oggi la leggiamo dalla tabella chat_assistente
+  //    (una chat al giorno: ogni giorno riparte da zero). salva=false → non la scriviamo.
   let domanda = "";
-  let storia: { ruolo: string; testo: string }[] = [];
+  let salvaChat = true;
+  let origine: "app" | "telegram" = "app";
   try {
     const corpo = await req.json();
     domanda = String(corpo?.domanda ?? "").trim();
-    if (Array.isArray(corpo?.storia)) {
-      storia = corpo.storia
-        .filter((m: any) => m && (m.ruolo === "utente" || m.ruolo === "assistente") && typeof m.testo === "string")
-        .slice(-20)
-        .map((m: any) => ({ ruolo: m.ruolo, testo: m.testo.slice(0, MAX_LUNGHEZZA_DOMANDA) }));
-    }
+    if (corpo?.salva === false) salvaChat = false;
+    if (corpo?.origine === "telegram") origine = "telegram";
   } catch {
     return risposta({ errore: "Richiesta non valida." }, 400);
   }
   if (!domanda) return risposta({ errore: "Scrivi una domanda." }, 400);
   if (domanda.length > MAX_LUNGHEZZA_DOMANDA) return risposta({ errore: "Domanda troppo lunga." }, 400);
+
+  const giornoChat = chiaveGiornoRoma();
+  let storia: { ruolo: string; testo: string }[] = [];
+  if (salvaChat) {
+    const { data: righe } = await supabase.from("chat_assistente")
+      .select("ruolo, testo").eq("giorno", giornoChat).order("creato_il", { ascending: false }).limit(20);
+    storia = (righe ?? []).reverse().map((r: any) => ({ ruolo: r.ruolo, testo: String(r.testo).slice(0, MAX_LUNGHEZZA_DOMANDA) }));
+  }
 
   // 3. Eventi (da ieri a fra 7 giorni) e caselle di oggi. La Row Level Security fa vedere
   //    solo i dati dell'utente (e gli eventi dei suoi gruppi).
@@ -420,9 +426,24 @@ Deno.serve(async (req) => {
     }
   }
 
+  const testoRisposta = testoFinale || (azioni.length ? "Fatto!" : "Non ho una risposta, riprova.");
+
+  // 6. Salviamo la domanda e la risposta nella chat di oggi
+  if (salvaChat) {
+    const prima = new Date();
+    const dopo = new Date(prima.getTime() + 1); // così la risposta viene sempre dopo la domanda
+    const { error } = await supabase.from("chat_assistente").insert([
+      // (tutte e due le righe con gli stessi campi: se ne manca uno, Supabase lo manda vuoto e la tabella lo rifiuta)
+      { utente_id: user.id, giorno: giornoChat, ruolo: "utente", testo: domanda, azioni: [], origine, creato_il: prima.toISOString() },
+      { utente_id: user.id, giorno: giornoChat, ruolo: "assistente", testo: testoRisposta.slice(0, 8000), azioni, origine, creato_il: dopo.toISOString() },
+    ]);
+    if (error) console.error("Chat non salvata:", error.code); // la risposta arriva lo stesso
+  }
+
   return risposta({
-    risposta: testoFinale || (azioni.length ? "Fatto!" : "Non ho una risposta, riprova."),
+    risposta: testoRisposta,
     azioni,
     cambiati: [...cambiati],
+    giorno: giornoChat,
   });
 });

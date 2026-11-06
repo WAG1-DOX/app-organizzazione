@@ -176,75 +176,9 @@ bottoneReset.addEventListener("click", () => {
 document.querySelector(".icona-scintilla").replaceWith(icona("scintilla", 18));
 document.getElementById("bottone-assistente").addEventListener("click", apriAssistente);
 
-// ---------- Assistente: manda la domanda alla funzione "assistente" di Supabase ----------
-// La funzione legge da sola i tuoi eventi dei prossimi 7 giorni (dal database) e chiede a Claude.
-function apriAssistente() {
-  const domanda = h("textarea", { rows: 3, maxlength: 2000, placeholder: "Es. «Ho pranzato e preso la creatina» o «Ricordami di chiamare la nonna venerdì alle 18»" });
-  const bottone = h("button", { class: "bottone-accento largo", type: "submit" }, "Chiedi");
-  const risposta = h("div", { class: "assistente-risposta", "aria-live": "polite" });
-
-  const modulo = h("form", { class: "modulo", onsubmit: async (ev) => {
-    ev.preventDefault();
-    const testo = domanda.value.trim();
-    if (!testo) return;
-    if (!sb || !utenteSupabase) {
-      risposta.textContent = "Per usare l'assistente devi accedere con il tuo account.";
-      return;
-    }
-    bottone.disabled = true;
-    bottone.textContent = "Sto pensando…";
-    risposta.className = "assistente-risposta caricamento";
-    risposta.textContent = "L'assistente sta leggendo i tuoi impegni…";
-    try {
-      // prima mandiamo al database le ultime modifiche, così l'assistente vede gli eventi aggiornati
-      if (typeof inviaAlCloud === "function") await inviaAlCloud();
-      const { data, error } = await sb.functions.invoke("assistente", { body: { domanda: testo } });
-      if (error) {
-        // la funzione manda un messaggio in italiano dentro "errore": proviamo a leggerlo
-        let msg = "L'assistente non risponde, riprova tra poco.";
-        try { const corpo = await error.context.json(); if (corpo && corpo.errore) msg = corpo.errore; } catch (e) {}
-        throw new Error(msg);
-      }
-      risposta.className = "assistente-risposta";
-      // **parola** → parola in grassetto (senza usare innerHTML: è più sicuro)
-      risposta.textContent = "";
-      String(data.risposta || "").split(/\*\*(.+?)\*\*/g)
-        .forEach((pezzo, i) => risposta.append(i % 2 ? h("strong", {}, pezzo) : pezzo));
-      // l'assistente ha spuntato caselle o creato promemoria: lo mostriamo e ricarichiamo i dati
-      if (Array.isArray(data.azioni) && data.azioni.length) {
-        risposta.append(h("ul", { class: "assistente-azioni" }, data.azioni.map((a) => h("li", {}, a))));
-      }
-      if (Array.isArray(data.cambiati) && data.cambiati.length && typeof scaricaDalCloud === "function") {
-        try {
-          await applicaDalCloud(await scaricaDalCloud());
-          disegna();
-          // i promemoria nuovi con una data vanno anche sul calendario Google "Promemoria"
-          if (typeof inviaPromemoriaAGoogle === "function") {
-            for (const p of stato.promemoria.filter((x) => x.da_inviare)) inviaPromemoriaAGoogle(p);
-          }
-        } catch (e) { /* li vedrai al prossimo aggiornamento */ }
-      }
-    } catch (e) {
-      risposta.className = "assistente-risposta errore";
-      risposta.textContent = e.message || "L'assistente non risponde, riprova tra poco.";
-    }
-    bottone.disabled = false;
-    bottone.textContent = "Chiedi";
-  } },
-    campo("Cosa vuoi sapere?", domanda),
-    bottone);
-
-  // Invio = manda, Maiusc+Invio = va a capo
-  domanda.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); modulo.requestSubmit(); }
-  });
-
-  apriModale("Chiedi all'assistente",
-    h("p", { class: "testo-leggero" }, "Vede i tuoi impegni e le caselle di oggi. Puoi dirgli cosa hai fatto («ho pranzato e preso la creatina») o chiedergli di ricordarti qualcosa."),
-    modulo,
-    risposta);
-  domanda.focus();
-}
+// ---------- Assistente ----------
+// La finestra della chat (stile "foglio che sale dal basso") è in js/chat-assistente.js:
+// apriAssistente() è definita lì.
 
 // Sul telefono la barra con "Esci" è nascosta: toccando l'avatar si può uscire lo stesso
 const avatar = document.getElementById("avatar");
