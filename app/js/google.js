@@ -8,6 +8,8 @@
 // - I calendari in abbonamento (es. Canvas) sono di sola lettura: li aggiorna Google
 //   da solo, ogni qualche ora. Qui li vedi appena li vede anche il telefono.
 // - Gli eventi che crei nell'app vanno nel tuo calendario principale.
+// - Se su Google hai un calendario chiamato "Promemoria", i suoi eventi diventano i promemoria
+//   dell'app (e viceversa). Così un promemoria aggiunto dal telefono o da Claude compare qui.
 // - Serve un "Client ID" di Google (gratis, pubblico: non è una chiave segreta).
 //
 // Limite di questa prima versione: il permesso di Google dura circa 1 ora e ogni volta che
@@ -132,6 +134,8 @@ async function aggiornaElencoCalendari() {
       attivo: vecchio ? vecchio.attivo : c.selected !== false,
       // calendari della scuola (H-Farm, Canvas…): i loro eventi diventano "scuola", gialli e nella sezione Lezioni
       scuola: vecchio && vecchio.scuola !== undefined ? vecchio.scuola : /h-?farm|canvas|universit|college|lezion|school|course|corso/i.test(c.summaryOverride || c.summary || ""),
+      // il calendario "Promemoria": non va nel calendario dell'app ma nella sezione Promemoria
+      promemoria: /^\s*promemoria\s*$/i.test(c.summaryOverride || c.summary || "") && ["owner", "writer"].includes(c.accessRole),
     };
   });
 }
@@ -169,8 +173,8 @@ async function sincronizzaGoogle() {
   try {
     await aggiornaElencoCalendari();
     const dal = aggiungiGiorni(new Date(), -60), al = aggiungiGiorni(new Date(), 180);
-    const prima = JSON.stringify(stato.eventi);
-    const attivi = calendariGoogle().filter((c) => c.attivo);
+    const prima = JSON.stringify([stato.eventi, stato.promemoria]);
+    const attivi = calendariGoogle().filter((c) => c.attivo && !c.promemoria);
     const visti = new Set();
 
     for (const cal of attivi) {
@@ -197,11 +201,13 @@ async function sincronizzaGoogle() {
       return fuoriPeriodo || visti.has(`${e.google_cal}|${e.google_id}`);
     });
 
+    await sincronizzaPromemoria();
+
     stato.google.ultimoSync = new Date().toISOString();
     Google.stato = "attivo";
     Google.errore = "";
     salva();
-    if (JSON.stringify(stato.eventi) !== prima) Google.daRidisegnare = true;
+    if (JSON.stringify([stato.eventi, stato.promemoria]) !== prima) Google.daRidisegnare = true;
   } catch (e) {
     Google.stato = "errore";
     Google.errore = e.message;
@@ -217,11 +223,13 @@ function ridisegnaSeServe() {
   const scrivendo = document.activeElement && document.activeElement.matches("input, select, textarea");
   const finestraAperta = document.getElementById("modale").classList.contains("aperta");
   if (scrivendo || finestraAperta) return;
-  if (Google.daRidisegnare || sezioneAttuale().id === "calendario") {
+  if (Google.daRidisegnare) {
     Google.daRidisegnare = false;
-    const scroll = window.scrollY;
-    disegna();
-    window.scrollTo(0, scroll);
+    ridisegnaFermo();
+  } else {
+    // niente di nuovo: aggiorniamo solo la scritta "aggiornato adesso", senza toccare il resto
+    const pill = document.querySelector(".stato-google");
+    if (pill && pill.lastChild) pill.lastChild.textContent = statoGoogle().testo;
   }
 }
 
@@ -272,6 +280,113 @@ async function eliminaDaGoogle(evento) {
   catch (err) { Google.stato = "errore"; Google.errore = err.message; Google.daRidisegnare = true; ridisegnaSeServe(); }
 }
 
+// ---------- Promemoria ↔ calendario Google "Promemoria" ----------
+// Su Google ogni promemoria è un evento del calendario "Promemoria":
+// - con solo la data → evento di tutto il giorno; con anche l'ora → evento di 15 minuti
+// - fatto → il titolo comincia con "✓ " (così si vede anche sul telefono)
+// I promemoria senza data restano solo nell'app (Google vuole sempre una data).
+// Le modifiche fatte mentre Google non è collegato partono al collegamento successivo.
+const calendarioPromemoria = () => calendariGoogle().find((c) => c.promemoria);
+const PromemoriaInInvio = new Set(); // per non creare due volte lo stesso evento
+
+function promemoriaDaGoogle(g, esistente) {
+  const tuttoIlGiorno = !!g.start.date;
+  const titolo = (g.summary || "(senza titolo)").trim();
+  const fatto = /^[✓✔]/.test(titolo);
+  return {
+    ...(esistente || {}),
+    id: esistente ? esistente.id : `gp-${g.id}`,
+    testo: fatto ? titolo.replace(/^[✓✔]\s*/, "") : titolo,
+    scadenza: tuttoIlGiorno ? g.start.date : chiaveGiorno(new Date(g.start.dateTime)),
+    ora: tuttoIlGiorno ? null : oraDi(new Date(g.start.dateTime)),
+    fatto,
+    google_id: g.id,
+  };
+}
+
+function promemoriaVersoGoogle(p) {
+  const corpo = { summary: (p.fatto ? "✓ " : "") + p.testo };
+  if (!p.google_id) corpo.description = "Promemoria di Organizza";
+  if (p.ora) {
+    const inizio = daChiave(p.scadenza);
+    const [hh, mm] = p.ora.split(":").map(Number);
+    inizio.setHours(hh, mm, 0, 0);
+    corpo.start = { dateTime: isoLocale(inizio) };
+    corpo.end = { dateTime: isoLocale(new Date(inizio.getTime() + 15 * 60000)) };
+  } else {
+    corpo.start = { date: p.scadenza };
+    corpo.end = { date: chiaveGiorno(aggiungiGiorni(daChiave(p.scadenza), 1)) };
+  }
+  return corpo;
+}
+
+// Manda a Google un promemoria nuovo o cambiato (se Google non è collegato, ci riprova dopo)
+async function inviaPromemoriaAGoogle(p) {
+  if (!p.scadenza) { delete p.da_inviare; return; }       // senza data: resta solo nell'app
+  const cal = calendarioPromemoria();
+  if (!cal || !Google.token || Date.now() > Google.scadenza || PromemoriaInInvio.has(p.id)) return;
+  PromemoriaInInvio.add(p.id);
+  try {
+    if (p.google_id) {
+      await chiamaGoogle("PATCH", `${urlEventi(cal.id)}/${encodeURIComponent(p.google_id)}`, promemoriaVersoGoogle(p));
+    } else {
+      const creato = await chiamaGoogle("POST", urlEventi(cal.id), promemoriaVersoGoogle(p));
+      p.google_id = creato.id;
+    }
+    delete p.da_inviare;
+    salva();
+  } catch (err) {
+    console.warn("Promemoria non inviato a Google (riprovo dopo):", err.message);
+  } finally {
+    PromemoriaInInvio.delete(p.id);
+  }
+}
+
+async function eliminaPromemoriaDaGoogle(p) {
+  if (!p.google_id) return;
+  const cal = calendarioPromemoria();
+  try {
+    if (!cal || !Google.token || Date.now() > Google.scadenza) throw new Error("Google non collegato");
+    await chiamaGoogle("DELETE", `${urlEventi(cal.id)}/${encodeURIComponent(p.google_id)}`);
+  } catch (err) {
+    // lo cancelliamo da Google al prossimo collegamento
+    (stato.google.promemoriaEliminati = stato.google.promemoriaEliminati || []).push(p.google_id);
+    salva();
+  }
+}
+
+async function sincronizzaPromemoria() {
+  const cal = calendarioPromemoria();
+  if (!cal) return;
+  // 1) prima mandiamo quello che hai fatto qui mentre Google non era collegato
+  for (const id of stato.google.promemoriaEliminati || []) {
+    await chiamaGoogle("DELETE", `${urlEventi(cal.id)}/${encodeURIComponent(id)}`);
+  }
+  stato.google.promemoriaEliminati = [];
+  for (const p of stato.promemoria.filter((x) => x.da_inviare)) await inviaPromemoriaAGoogle(p);
+
+  // 2) poi leggiamo quelli su Google (dagli ultimi 60 giorni a un anno avanti)
+  const dal = aggiungiGiorni(new Date(), -60), al = aggiungiGiorni(new Date(), 365);
+  const eventi = await leggiTutto(urlEventi(cal.id), {
+    singleEvents: "true", timeMin: dal.toISOString(), timeMax: al.toISOString(), maxResults: "2500",
+  });
+  const visti = new Set();
+  for (const g of eventi) {
+    if (g.status === "cancelled" || !g.start) continue;
+    visti.add(g.id);
+    const esistente = stato.promemoria.find((p) => p.google_id === g.id);
+    if (esistente && esistente.da_inviare) continue; // hai cambiato qualcosa qui che non è ancora partito: vince il tuo
+    const nuovo = promemoriaDaGoogle(g, esistente);
+    if (esistente) Object.assign(esistente, nuovo);
+    else stato.promemoria.push(nuovo);
+  }
+
+  // 3) quelli cancellati su Google spariscono anche qui
+  const dalK = chiaveGiorno(dal), alK = chiaveGiorno(al);
+  stato.promemoria = stato.promemoria.filter((p) =>
+    !p.google_id || p.da_inviare || !p.scadenza || p.scadenza < dalK || p.scadenza > alK || visti.has(p.google_id));
+}
+
 // ---------- Collegare / scollegare ----------
 async function collegaGoogle() {
   Google.stato = "collegamento";
@@ -304,6 +419,10 @@ function scollegaGoogle() {
   stato.eventi = stato.eventi.filter((e) => !e.google_id || !String(e.id).startsWith("g-"));
   // gli eventi creati qui restano, ma non più legati al vecchio account
   for (const e of stato.eventi) { delete e.google_id; delete e.google_cal; delete e.colore; delete e.sola_lettura; }
+  // stessa cosa per i promemoria: quelli arrivati da Google si tolgono, gli altri restano
+  stato.promemoria = stato.promemoria.filter((p) => !String(p.id).startsWith("gp-"));
+  for (const p of stato.promemoria) { delete p.google_id; delete p.da_inviare; }
+  stato.google.promemoriaEliminati = [];
   chiudiModale();
   aggiorna();
 }
@@ -344,10 +463,12 @@ function apriPannelloGoogle() {
 
   // spunte: quali calendari mostrare
   const spunte = cal.map((c) => h("label", { class: "riga-calendario" },
-    h("input", { type: "checkbox", checked: c.attivo, onchange: (ev) => { c.attivo = ev.target.checked; salva(); } }),
+    h("input", { type: "checkbox", checked: c.promemoria || c.attivo, disabled: c.promemoria,
+      title: c.promemoria ? "I suoi eventi vanno nella sezione Promemoria" : "", onchange: (ev) => { c.attivo = ev.target.checked; salva(); } }),
     h("i", { style: `background:${c.colore}` }),
     h("span", { class: "riga-calendario-nome" }, c.nome),
     c.principale && h("span", { class: "pill piccola" }, "principale"),
+    c.promemoria && h("span", { class: "pill piccola attiva" }, "→ Promemoria"),
     h("button", { class: `pill piccola${c.scuola ? " attiva" : ""}`, type: "button", title: "Gli eventi dei calendari di scuola sono gialli e vanno nella sezione Lezioni",
       onclick: (ev) => { ev.preventDefault(); c.scuola = !c.scuola; salva(); ev.currentTarget.classList.toggle("attiva", c.scuola); } }, "Scuola")));
 
@@ -359,6 +480,8 @@ function apriPannelloGoogle() {
     cal.length > 0 && h("fieldset", { class: "articoli" },
       h("legend", {}, "Calendari da mostrare"),
       spunte),
+    cal.length > 0 && !calendarioPromemoria() && h("p", { class: "testo-leggero piccolo" },
+      "Vuoi i promemoria anche su Google (e sul telefono)? Su Google Calendar crea un calendario chiamato esattamente «Promemoria», poi premi «Aggiorna ora»."),
     h("p", { class: "testo-leggero piccolo" }, "«Scuola» = calendario di H-Farm: i suoi eventi sono gialli e compaiono nella sezione Lezioni. Mentre l'app è aperta controlla Google ogni 30 secondi. I calendari in abbonamento (come Canvas) li aggiorna Google da solo ogni qualche ora: qui li vedi quando li vede anche il telefono. I nuovi eventi creati qui vanno nel calendario principale."),
     h("div", { class: "azioni-modale" },
       h("button", { class: "bottone-secondario", type: "button", onclick: () => { stato.google.clientId = ""; salva(); apriPannelloGoogle(); } }, "Cambia Client ID"),

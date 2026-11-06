@@ -1460,3 +1460,11 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
 .accesso-messaggio.errore { color: var(--rosso); }
 .accesso-messaggio.ok { color: var(--verde); }
 .accesso-link { align-self: center; border: none; background: none; margin-top: 0; }
+
+/* ritocchi dalla revisione */
+.azioni-obiettivi .bottone-accento, .azioni-obiettivi .bottone-secondario { white-space: normal; text-align: center; line-height: 1.2; }
+.cal-evento strong, .blocco strong, .voce-piano-titolo, .gi-cal-blocco strong { overflow-wrap: break-word; word-break: normal; hyphens: auto; }
+
+/* ===== Promemoria collegati a Google ===== */
+.promemoria-google { display: inline-flex; color: var(--testo-tenue); opacity: .7; }
+.promemoria-google svg { width: 12px; height: 12px; }

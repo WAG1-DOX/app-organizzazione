@@ -48,12 +48,24 @@ function disegna() {
   aggiornaCampanella();
 }
 
+// Ridisegna la sezione senza far saltare niente: tiene la posizione della pagina
+// e quella delle viste a ore (calendario, giornata, orario) che scorrono da sole
+const ZONE_CHE_SCORRONO = [".cal-scorri", ".gi-scorri", ".orario-scorri", ".tavolozza"];
+function ridisegnaFermo() {
+  const scroll = window.scrollY;
+  const sezionePrima = sezioneAttuale().id;
+  const posizioni = ZONE_CHE_SCORRONO.map((s) => { const el = document.querySelector(s); return el ? el.scrollTop : null; });
+  disegna();
+  if (sezioneAttuale().id === sezionePrima) {
+    ZONE_CHE_SCORRONO.forEach((s, i) => { const el = document.querySelector(s); if (el && posizioni[i] !== null) el.scrollTop = posizioni[i]; });
+  }
+  window.scrollTo(0, scroll);
+}
+
 // Da chiamare dopo ogni modifica ai dati: salva e ridisegna, senza far saltare la pagina
 function aggiorna() {
-  const scroll = window.scrollY;
   salva();
-  disegna();
-  window.scrollTo(0, scroll);
+  ridisegnaFermo();
 }
 
 function vaiA(id) {

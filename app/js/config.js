@@ -5,3 +5,13 @@
 
 const SUPABASE_URL = "https://jpesiyylptdfkdgdxrqt.supabase.co";
 const SUPABASE_CHIAVE_PUBBLICA = "sb_publishable_QKyYcvAcSI79j9c0ognSKw_buBkm6LE";
+
+// ===== Innesti: funzioni già scritte ma SPENTE =====
+// Si accendono cambiando false in true, quando è il momento (istruzioni in app/REVISIONE.md).
+
+// Salva i dati nel database Supabase invece che solo nel browser.
+// ⚠️ Accendere SOLO dopo che Edoardo ha eseguito il codice SQL di app/tabelle-nuove.md.
+const SUPABASE_DATI_ATTIVI = false;
+
+// Notifiche sul Mac mentre l'app è aperta (lezioni, eventi, micro-eventi, promemoria, ora di dormire).
+const NOTIFICHE_ATTIVE = false;

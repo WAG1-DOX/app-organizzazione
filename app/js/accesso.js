@@ -42,7 +42,13 @@ async function avviaAccesso(quandoDentro) {
   }
   let entrato = false;
   const entra = async (user) => {
+    // Supabase a volte ripete "sei dentro" (es. quando torni sulla scheda): se sei sempre tu, non ridisegniamo
+    if (entrato && utenteSupabase && utenteSupabase.id === user.id) return;
+    if (entrato && utenteSupabase && utenteSupabase.id !== user.id) { location.reload(); return; }
+    usaDatiDiUtente(user.id);
     await impostaUtente(user);
+    if (typeof avviaDatabase === "function") await avviaDatabase();      // innesto: spento finché SUPABASE_DATI_ATTIVI = false
+    if (typeof avviaNotifiche === "function") avviaNotifiche();          // innesto: spento finché NOTIFICHE_ATTIVE = false
     document.body.classList.remove("fuori");
     nascondiAccesso();
     if (!entrato) { entrato = true; quandoDentro(); } else disegna();

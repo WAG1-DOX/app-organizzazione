@@ -6,16 +6,26 @@ Viste.promemoria = function (box) {
 
   const testo = h("input", { type: "text", placeholder: "Cosa non devi dimenticare?", required: true, maxlength: 100 });
   const scadenza = h("input", { type: "date" });
+  const ora = h("input", { type: "time" });
+  // se c'è il calendario "Promemoria" su Google, i promemoria con una data vanno anche lì
+  const versoGoogle = (p) => { if (typeof inviaPromemoriaAGoogle === "function") inviaPromemoriaAGoogle(p); };
   const modulo = h("form", { class: "modulo-riga", onsubmit: (ev) => {
     ev.preventDefault();
-    stato.promemoria.push({ id: nuovoId("p"), testo: testo.value.trim(), scadenza: scadenza.value || null, fatto: false });
+    const p = { id: nuovoId("p"), testo: testo.value.trim(), scadenza: scadenza.value || null,
+      ora: scadenza.value && ora.value ? ora.value : null, fatto: false, da_inviare: !!scadenza.value };
+    stato.promemoria.push(p);
     aggiorna();
+    versoGoogle(p);
   } },
-    campo("Nuovo promemoria", testo), campo("Entro il (facoltativo)", scadenza),
+    campo("Nuovo promemoria", testo), campo("Entro il (facoltativo)", scadenza), campo("Ora (facoltativa)", ora),
     h("button", { class: "bottone-accento", type: "submit" }, icona("piu", 16), "Aggiungi"));
 
   const etichettaScadenza = (p) => {
     if (!p.scadenza) return h("span", { class: "pill piccola" }, "senza data");
+    if (p.ora && !p.fatto && p.scadenza >= oggiK) {
+      const giorno = p.scadenza === oggiK ? "oggi" : p.scadenza === domaniK ? "domani" : dataBreve(daChiave(p.scadenza));
+      return h("span", { class: `pill piccola${p.scadenza <= domaniK ? " urgente" : ""}` }, `${giorno} · ${p.ora}`);
+    }
     if (p.fatto) return h("span", { class: "pill piccola" }, dataBreve(daChiave(p.scadenza)));
     if (p.scadenza < oggiK) return h("span", { class: "pill piccola pericolo" }, "scaduto");
     if (p.scadenza === oggiK) return h("span", { class: "pill piccola urgente" }, "oggi");
@@ -25,12 +35,19 @@ Viste.promemoria = function (box) {
 
   const riga = (p) => h("li", { class: `riga-promemoria${p.fatto ? " fatto" : ""}` },
     h("button", { class: `spunta${p.fatto ? " fatta" : ""}`, type: "button", "aria-label": p.fatto ? "Segna come da fare" : "Segna come fatto",
-      onclick: () => { p.fatto = !p.fatto; aggiorna(); } }, icona("check", 14)),
+      onclick: () => {
+        p.fatto = !p.fatto;
+        if (p.google_id) p.da_inviare = true;
+        aggiorna();
+        if (p.google_id) versoGoogle(p);
+      } }, icona("check", 14)),
     h("span", { class: "promemoria-testo" }, p.testo),
+    p.google_id && h("span", { class: "promemoria-google", title: "Anche su Google Calendar" }, icona("google", 12)),
     etichettaScadenza(p),
     h("button", { class: "icona-tonda piccola fantasma", type: "button", "aria-label": "Elimina", onclick: () => {
       stato.promemoria = stato.promemoria.filter((x) => x.id !== p.id);
       aggiorna();
+      if (typeof eliminaPromemoriaDaGoogle === "function") eliminaPromemoriaDaGoogle(p);
     } }, icona("cestino", 14)));
 
   // ordine: prima quelli con data (dalla più vicina), poi quelli senza data
