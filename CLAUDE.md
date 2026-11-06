@@ -154,7 +154,8 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 - `salva()` in base.js, dopo 0,8 secondi, manda a Supabase SOLO quello che è cambiato:
   eventi → tabella `eventi`; tutto il resto → `dati_personali` (una riga per chiave, elenco
   in `CHIAVI_CLOUD`; in più `google_impostazioni` = Client ID e calendari scelti).
-- Gli id dell'app (es. `e-abc`) diventano uuid sempre uguali con `uuidDi()` (SHA-256).
+- Gli id dell'app (es. `e-abc`) diventano uuid sempre uguali con `uuidDi()` (SHA-256), calcolati insieme all'id dell'account
+  (così l'"e1" di Luca e l'"e1" di Edoardo sono due righe diverse: prima il secondo veniva bloccato dalla sicurezza).
 - Sezione nuova con dati nuovi? Aggiungi il campo di `stato` a `CHIAVI_CLOUD`, sennò non si salva online.
 - Con il login il pulsante "Ricomincia da capo" è nascosto (rimetterebbe i dati finti sul database).
 - Indicatore in alto sotto l'email (`#stato-cloud`): "Salvato" / errore.

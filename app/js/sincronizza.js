@@ -37,18 +37,22 @@ const Cloud = {
 
 // ---------- Id: l'app usa id come "e-abc123", il database vuole un uuid ----------
 // Trasformiamo ogni id dell'app in un uuid, sempre lo stesso per lo stesso id (con SHA-256).
+// Nel calcolo mettiamo anche l'id dell'account: così l'evento "e1" di Luca e l'"e1" di Edoardo
+// (es. gli eventi di esempio, uguali in ogni browser) diventano due righe diverse.
+// Senza, il secondo che salva verrebbe bloccato dalla sicurezza (sembrerebbe modificare l'evento dell'altro).
 const FORMA_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const cacheUuid = new Map();
 async function uuidDi(id) {
   id = String(id);
   if (FORMA_UUID.test(id)) return id.toLowerCase();
-  if (cacheUuid.has(id)) return cacheUuid.get(id);
-  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(id)));
+  const chiave = `${mioId() || ""}|${id}`;
+  if (cacheUuid.has(chiave)) return cacheUuid.get(chiave);
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(chiave)));
   hash[6] = (hash[6] & 0x0f) | 0x50; // "versione 5": è un uuid valido
   hash[8] = (hash[8] & 0x3f) | 0x80;
   const x = [...hash.slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
   const u = `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20, 32)}`;
-  cacheUuid.set(id, u);
+  cacheUuid.set(chiave, u);
   return u;
 }
 
