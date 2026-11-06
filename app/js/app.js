@@ -159,10 +159,63 @@ bottoneReset.addEventListener("click", () => {
 });
 
 document.querySelector(".icona-scintilla").replaceWith(icona("scintilla", 18));
-document.getElementById("bottone-assistente").addEventListener("click", () =>
-  apriModale("Assistente (in arrivo)",
-    h("p", { class: "testo-leggero" }, "Qui potrai scrivere cose come «domani palestra alle 18 per un'ora» e l'assistente le metterà in calendario da solo."),
-    h("p", { class: "testo-leggero" }, "Lo colleghiamo dopo il database, con Claude Haiku tramite una funzione di Supabase (come deciso in CLAUDE.md).")));
+document.getElementById("bottone-assistente").addEventListener("click", apriAssistente);
+
+// ---------- Assistente: manda la domanda alla funzione "assistente" di Supabase ----------
+// La funzione legge da sola i tuoi eventi dei prossimi 7 giorni (dal database) e chiede a Claude.
+function apriAssistente() {
+  const domanda = h("textarea", { rows: 3, maxlength: 2000, placeholder: "Es. «Organizzami la settimana» o «Quando ho tempo per studiare domani?»" });
+  const bottone = h("button", { class: "bottone-accento largo", type: "submit" }, "Chiedi");
+  const risposta = h("div", { class: "assistente-risposta", "aria-live": "polite" });
+
+  const modulo = h("form", { class: "modulo", onsubmit: async (ev) => {
+    ev.preventDefault();
+    const testo = domanda.value.trim();
+    if (!testo) return;
+    if (!sb || !utenteSupabase) {
+      risposta.textContent = "Per usare l'assistente devi accedere con il tuo account.";
+      return;
+    }
+    bottone.disabled = true;
+    bottone.textContent = "Sto pensando…";
+    risposta.className = "assistente-risposta caricamento";
+    risposta.textContent = "L'assistente sta leggendo i tuoi impegni…";
+    try {
+      // prima mandiamo al database le ultime modifiche, così l'assistente vede gli eventi aggiornati
+      if (typeof inviaAlCloud === "function") await inviaAlCloud();
+      const { data, error } = await sb.functions.invoke("assistente", { body: { domanda: testo } });
+      if (error) {
+        // la funzione manda un messaggio in italiano dentro "errore": proviamo a leggerlo
+        let msg = "L'assistente non risponde, riprova tra poco.";
+        try { const corpo = await error.context.json(); if (corpo && corpo.errore) msg = corpo.errore; } catch (e) {}
+        throw new Error(msg);
+      }
+      risposta.className = "assistente-risposta";
+      // **parola** → parola in grassetto (senza usare innerHTML: è più sicuro)
+      risposta.textContent = "";
+      String(data.risposta || "").split(/\*\*(.+?)\*\*/g)
+        .forEach((pezzo, i) => risposta.append(i % 2 ? h("strong", {}, pezzo) : pezzo));
+    } catch (e) {
+      risposta.className = "assistente-risposta errore";
+      risposta.textContent = e.message || "L'assistente non risponde, riprova tra poco.";
+    }
+    bottone.disabled = false;
+    bottone.textContent = "Chiedi";
+  } },
+    campo("Cosa vuoi sapere?", domanda),
+    bottone);
+
+  // Invio = manda, Maiusc+Invio = va a capo
+  domanda.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); modulo.requestSubmit(); }
+  });
+
+  apriModale("Chiedi all'assistente",
+    h("p", { class: "testo-leggero" }, "L'assistente vede i tuoi eventi dei prossimi 7 giorni. Per ora risponde e consiglia: non modifica ancora il calendario."),
+    modulo,
+    risposta);
+  domanda.focus();
+}
 
 const bottoneEsci = document.getElementById("bottone-esci");
 bottoneEsci.querySelector(".icona").replaceWith(icona("frecciaSu", 18));
@@ -171,8 +224,12 @@ bottoneEsci.addEventListener("click", esci);
 disegnaMenu();
 window.addEventListener("hashchange", disegna);
 
-// Prima il login: l'app si disegna solo quando sei dentro con il tuo account
-avviaAccesso(() => disegna());
+// Prima il login: l'app si disegna solo quando sei dentro con il tuo account.
+// Poi scarica i tuoi dati dal database (sincronizza.js) e disegna.
+avviaAccesso(async () => {
+  await avviaCloud();
+  disegna();
+});
 
 // Se Google Calendar è già stato configurato, prepariamo subito il suo script
 // (così quando tocchi "Collega" la finestra di Google si apre senza attese)

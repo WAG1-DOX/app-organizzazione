@@ -1460,3 +1460,15 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
 .accesso-messaggio.errore { color: var(--rosso); }
 .accesso-messaggio.ok { color: var(--verde); }
 .accesso-link { align-self: center; border: none; background: none; margin-top: 0; }
+
+/* ===== Salvataggio su Supabase (in alto, sotto l'email) ===== */
+.profilo-testo .stato-cloud { font-size: 11px; color: var(--testo-tenue); }
+.profilo-testo .stato-cloud:empty { display: none; }
+.profilo-testo .stato-cloud.ok { color: var(--verde); }
+.profilo-testo .stato-cloud.errore { color: var(--rosso); }
+
+/* ===== Assistente ===== */
+.assistente-risposta { white-space: pre-wrap; line-height: 1.55; font-size: 14px; margin-top: 14px; max-height: 50vh; overflow-y: auto; }
+.assistente-risposta:empty { display: none; }
+.assistente-risposta.caricamento { color: var(--testo-leggero); }
+.assistente-risposta.errore { color: var(--rosso); }

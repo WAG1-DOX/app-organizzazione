@@ -137,8 +137,20 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
       ora sono `privato.sono_membro(uuid)` e `privato.sono_admin(uuid)`: nel nuovo SQL usare questi nomi.
 - [x] URL di login: Site URL `http://localhost:5500`, redirect `http://localhost:*/**`
 - [ ] Login e profili (pagina di login fatta da Luca; account di Edoardo creato e confermato; manca Luca)
-- [ ] App che salva i dati su Supabase invece che nel browser (Luca)
+- [x] App che salva i dati su Supabase (fatto da Edoardo il 6 nov, file `app/js/sincronizza.js`, provato)
 - [ ] Calendario ed eventi condivisi
 - [ ] Chat
 - [x] Integrazione Claude lato server: funzione `assistente` provata, risponde in ~4 secondi
-- [ ] Pulsante "Chiedi all'assistente…" collegato alla funzione (Luca)
+- [x] Pulsante "Chiedi all'assistente…" collegato alla funzione (`apriAssistente` in `app/js/app.js`)
+- [ ] Sul telefono il pulsante dell'assistente è nascosto (`.chiedi { display: none }` in style.css)
+- [ ] Foto degli scontrini: restano solo nel browser (IndexedDB), non ancora su Supabase Storage
+
+## Salvataggio su Supabase (`app/js/sincronizza.js`)
+- Il browser tiene una copia (localStorage); dopo il login comandano i dati del database.
+- `salva()` in base.js, dopo 0,8 secondi, manda a Supabase SOLO quello che è cambiato:
+  eventi → tabella `eventi`; tutto il resto → `dati_personali` (una riga per chiave, elenco
+  in `CHIAVI_CLOUD`; in più `google_impostazioni` = Client ID e calendari scelti).
+- Gli id dell'app (es. `e-abc`) diventano uuid sempre uguali con `uuidDi()` (SHA-256).
+- Sezione nuova con dati nuovi? Aggiungi il campo di `stato` a `CHIAVI_CLOUD`, sennò non si salva online.
+- Con il login il pulsante "Ricomincia da capo" è nascosto (rimetterebbe i dati finti sul database).
+- Indicatore in alto sotto l'email (`#stato-cloud`): "Salvato" / errore.

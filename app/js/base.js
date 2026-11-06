@@ -146,8 +146,11 @@ function caricaStato() {
 
 const stato = caricaStato();
 
+// Salva nel browser (copia veloce, funziona anche senza internet)
+// e, se hai fatto il login, manda le modifiche anche a Supabase (vedi sincronizza.js).
 function salva() {
   try { localStorage.setItem(CHIAVE_SALVATAGGIO, JSON.stringify(stato)); } catch (e) { /* il browser non salva: pazienza */ }
+  if (typeof programmaInvio === "function") programmaInvio();
 }
 
 function ricominciaDaCapo() {
