@@ -179,6 +179,21 @@ Esempio di evento come arriverà all'app (usare questa forma per tutti gli event
   o nascosti (`stato.banca.conti`), grafico del saldo reale, analisi e consigli (`analisiMese`, `trovaAbbonamenti`).
   Regola unica per i totali: `contaNeiTotali(m)` in base.js (niente giroconti, conti nascosti, valute ≠ EUR).
 
+## Check-up mail (Gmail) — `app/js/gmail.js` + `app/js/sezioni/mail.js`
+- Gratis: Gmail API + regole, **niente AI**. Usa lo stesso collegamento Google della funzione `google`
+  (nessuna modifica alla funzione): `collegaDalServer(SCOPE_GMAIL)` in google.js chiede calendario + Gmail
+  insieme (`include_granted_scopes`). Permesso `gmail.modify` = leggere, segnare letta, archiviare
+  (NON cancellare per sempre, NON mandare mail).
+- Su Google Cloud (progetto **x-ecute**, Edoardo): **Gmail API abilitata** e scope `gmail.modify` aggiunto
+  in "Accesso ai dati". Senza l'API attiva l'app mostra "API di Gmail spente".
+- Cosa fa: smista in Importanti / Da leggere / Rumore (etichette di Gmail, persone a cui hai scritto,
+  regole, posta di massa) e dice perché; trova le **scadenze** nel testo → promemoria (anche su Google);
+  "Fallo dopo" = promemoria + archivia; **newsletter** (disiscriviti one-click, silenzia); **ricevute**
+  collegate ai movimenti (`movimento.ricevuta = { id, oggetto, da, thread }`); riepilogo in Home.
+- Le mail **non** vanno su Supabase: cache solo nel browser (`organizza-posta`), svuotata all'uscita.
+  Su Supabase solo le regole (chiave `regole_mail`: `mittenti`, `parole`, `mai`, `silenziati`, `scadenzeViste`).
+  Promemoria creati da una mail hanno `da_mail` (id della mail).
+
 ## Salvataggio su Supabase (`app/js/sincronizza.js`)
 - Il browser tiene una copia (localStorage); dopo il login comandano i dati del database.
 - `salva()` in base.js, dopo 0,8 secondi, manda a Supabase SOLO quello che è cambiato:

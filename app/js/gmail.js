@@ -558,6 +558,8 @@ function scadenzeDaDecidere() {
 
 function titoloScadenza(m, s) {
   const ogg = m.oggetto.replace(/^((re|r|fwd?|i|inoltra)\s*:\s*)+/i, "").trim();
+  // "Consegna: Consegna progetto finale" → niente doppione
+  if (minuscolo(ogg).startsWith(minuscolo(s.tipo).slice(0, 6))) return ogg.slice(0, 100);
   return `${s.tipo}: ${ogg}`.slice(0, 100);
 }
 

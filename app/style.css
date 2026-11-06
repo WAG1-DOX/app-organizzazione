@@ -1833,7 +1833,10 @@ body.chat-aperta { overflow: hidden; }
 .filtri-mail input { width: 100%; }
 .riga-mail { align-items: flex-start; }
 .riga-mail .avatar { margin-top: 4px; }
-.riga-cliccabile { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; background: none; border: none; padding: 0; color: inherit; text-align: left; cursor: pointer; }
+.riga-cliccabile { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 3px; background: none; border: none; padding: 0; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.riga-cliccabile > * { display: block; text-align: left; }
+.riga-cliccabile > .mail-testa { display: flex; }
+.riga-cliccabile > .gruppo-pill { display: flex; }
 .mail-testa { display: flex; justify-content: space-between; gap: 8px; }
 .mail-testa strong { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mail-oggetto { font-size: 14px; color: var(--testo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1854,10 +1857,12 @@ body.chat-aperta { overflow: hidden; }
 .insegna-mail { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bordo); }
 .elenco-spiegato { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; line-height: 1.45; }
 .elenco-scadenze, .scadenze-mail { display: flex; flex-direction: column; gap: 10px; }
-.riga-scadenza { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px;
+.riga-scadenza { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "data azioni" "corpo corpo"; gap: 8px 12px; align-items: center; padding: 10px 12px;
   border-radius: 14px; background: var(--pannello-forte); border: 1px solid var(--bordo); }
 .riga-scadenza.vicina { border-color: var(--accento-bordo); }
-.scadenza-data { display: flex; flex-direction: column; }
+.scadenza-data { grid-area: data; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.scadenza-corpo { grid-area: corpo; }
+.scadenza-azioni { grid-area: azioni; }
 .scadenza-data strong { font-size: 14px; }
 .riga-scadenza.vicina .scadenza-data strong { color: var(--accento); }
 .scadenza-data small { color: var(--testo-leggero); font-size: 12px; }
@@ -1888,6 +1893,4 @@ body.chat-aperta { overflow: hidden; }
   .numeri-mail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .tessera-mail { padding: 12px; }
   .tessera-mail strong { font-size: 22px; }
-  .riga-scadenza { grid-template-columns: minmax(0, 1fr) auto; }
-  .riga-scadenza .scadenza-data { grid-column: 1 / -1; flex-direction: row; gap: 8px; align-items: baseline; }
 }
