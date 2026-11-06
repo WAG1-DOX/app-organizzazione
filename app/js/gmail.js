@@ -23,7 +23,7 @@ const CHIAVE_POSTA = "organizza-posta";
 const GIORNI_INBOX = 21;          // quanto indietro guardiamo nella posta in arrivo
 const MAX_INBOX = 200;
 const OGNI_QUANTO_POSTA = 5 * 60 * 1000;
-const VERSIONE_ANALISI = 2;       // se cambia, le mail si rianalizzano
+const VERSIONE_ANALISI = 3;       // se cambia, le mail si rianalizzano
 
 const Posta = {
   stato: "spento",   // spento | manca-permesso | api-spenta | carico | pronto | errore
@@ -425,8 +425,9 @@ const TIPI_SCADENZA = [
   { tipo: "Esame", re: /\b(esam[ei]|exam|midterm|final exam|finals\b|appello|verifica|quiz|test\b|prova scritta|orale)/i },
   { tipo: "Consegna", re: /\b(consegn|deadline|due\b|due date|submit|submission|entro e non oltre|assignment|compit|homework|elaborat|upload)/i },
   { tipo: "Pagamento", re: /\b(pagament|pagare|paga\b|rata|bollett|fattur|addebit|payment|pay by|invoice|retta|tassa|saldo da)/i },
-  { tipo: "Appuntamento", re: /\b(appuntament|riunion|meeting|incontro|colloqui|call\b|videochiamata|webinar|lezione|seminari|workshop|evento|event\b|visita|prenotazion|booking|reservation|interview|partita|allenament|cena\b|festa|compleanno|ritrovo|ci vediamo)/i },
-  { tipo: "Scadenza", re: /\b(scadenz|scade|scadrà|scadono|entro|termine|ultimo giorno|last day|expire|expires|expiring|by\b|iscrizion|registra|rinnov|valid[oa] fino)/i },
+  { tipo: "Appuntamento", re: /\b(appuntament|riunion|meeting|incontro|colloqui|call\b|videochiamata|webinar|lezione|seminari|workshop|evento|event\b|visita|prenotazion|booking|reservation|interview|partita|allenament|cena\b|festa|compleanno|ritrovo|ci vediamo|meetup|conferen|conference|hackathon|location|luogo\b|aula\b|room\b|registered|sei iscritt|you('re| are) (registered|going)|ti aspettiamo|see you|biglietto|ticket|concerto|volo\b|flight|treno|train\b|check-in)/i },
+  { tipo: "Rinnovo", re: /\b(si rinnova|rinnov|renew|abbonament|subscription|prossimo addebito|next (payment|billing)|will be charged)/i },
+  { tipo: "Scadenza", re: /\b(scadenz|scade|scadrà|scadono|entro|termine|ultimo giorno|last day|expire|expires|expiring|by\b|iscrizion|valid[oa] fino)/i },
 ];
 
 function anno2(a, rif) {
@@ -505,7 +506,8 @@ function trovaScadenze(testo, rif) {
   const reIt = new RegExp(`\\b(\\d{1,2})(?:°|st|nd|rd|th)?\\s+(?:di\\s+)?(${NOMI_MESI})\\.?(?:\\s+(\\d{4}))?\\b`, "gi");
   while ((x = reIt.exec(t))) prendi(x.index, x[0].length, conAnno(MESI[minuscolo(x[2])], Number(x[1]), x[3] && Number(x[3]), rif));
   // November 15(th)(, 2026)
-  const reEn = new RegExp(`\\b(${NOMI_MESI})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b`, "gi");
+  // (?![:.]\\d): in "17 November 18:00" il "18" è l'orario, non il giorno
+  const reEn = new RegExp(`\\b(${NOMI_MESI})\\.?\\s+(\\d{1,2})(?![:.]\\d)(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b`, "gi");
   while ((x = reEn.exec(t))) prendi(x.index, x[0].length, conAnno(MESI[minuscolo(x[1])], Number(x[2]), x[3] && Number(x[3]), rif));
   // oggi / stasera / domani / dopodomani / lunedì (prossimo)
   // (niente \\b: con le lettere accentate come "lunedì" non funziona)
@@ -517,6 +519,8 @@ function trovaScadenze(testo, rif) {
     else if (/^(domani|tomorrow)$/.test(p)) d = aggiungiGiorni(rif, 1);
     else if (p === "dopodomani") d = aggiungiGiorni(rif, 2);
     else if (x[2]) {
+      // "Tuesday 17 November", "lunedì 12/11": il giorno della settimana accompagna una data vera, che basta
+      if (/^\s*,?\s*\d/.test(t.slice(x.index + x[0].length, x.index + x[0].length + 5))) continue;
       const target = GIORNI_SETT[minuscolo(x[2])];
       let diff = (target - rif.getDay() + 7) % 7;
       if (diff === 0) diff = 7;
