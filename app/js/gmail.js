@@ -257,13 +257,8 @@ async function aggiornaPosta(forza = false) {
       idDaRicerca(`in:inbox is:unread newer_than:${GIORNI_INBOX}d`, MAX_INBOX),
     ]);
     const note = new Map(Posta.mail.map((m) => [m.id, m]));
-<<<<<<< Updated upstream
     const nuove = idInbox.filter((id) => !note.has(id) || note.get(id).v !== VERSIONE_MAIL);
-    const lette = await aPiccoliGruppi(nuove, 8, leggiIntestazioni);
-=======
-    const nuove = idInbox.filter((id) => !note.has(id));
     const lette = await aPiccoliGruppi(nuove, 5, leggiIntestazioni);   // 5 alla volta: sotto il limite di Gmail
->>>>>>> Stashed changes
     for (const g of lette) if (g) note.set(g.id, mailDaGmail(g));
     const nonLette = new Set(idNonLette);
     Posta.mail = idInbox.map((id) => note.get(id)).filter(Boolean).map((m) => {
@@ -316,7 +311,7 @@ function pulisciCache() {
 async function aggiornaContatti() {
   if (Posta.contatti.length && Date.now() - Posta.contattiDel < 24 * 3600 * 1000) return;
   const ids = await idDaRicerca("in:sent newer_than:365d", 250);
-  const lette = await aPiccoliGruppi(ids, 8, (id) => leggiIntestazioni(id, ["To", "Cc"]));
+  const lette = await aPiccoliGruppi(ids, 5, (id) => leggiIntestazioni(id, ["To", "Cc"]));
   const tutti = new Set();
   for (const g of lette) if (g) for (const e of indirizziDi(`${intestazione(g, "To")},${intestazione(g, "Cc")}`)) tutti.add(e);
   if (Posta.email) tutti.delete(Posta.email);
@@ -784,7 +779,7 @@ function aggiungiRegola(chiave, voce) {
 // ---------- 3. Newsletter ----------
 async function analizzaNewsletter() {
   const ids = await idDaRicerca("newer_than:28d -in:sent -in:chats -in:drafts -in:trash (category:promotions OR category:social OR category:updates OR category:forums OR unsubscribe OR disiscriviti OR \"annulla iscrizione\" OR \"cancella iscrizione\")", 400);
-  const lette = await aPiccoliGruppi(ids, 8, (id) => leggiIntestazioni(id, ["From", "Subject", "List-Unsubscribe", "List-Unsubscribe-Post", "List-Id", "Precedence"]));
+  const lette = await aPiccoliGruppi(ids, 5, (id) => leggiIntestazioni(id, ["From", "Subject", "List-Unsubscribe", "List-Unsubscribe-Post", "List-Id", "Precedence"]));
   const perMittente = new Map();
   for (const g of lette) {
     if (!g) continue;
