@@ -12,8 +12,10 @@
 //   dell'app (e viceversa). Così un promemoria aggiunto dal telefono o da Claude compare qui.
 // - Serve un "Client ID" di Google (gratis, pubblico: non è una chiave segreta).
 //
-// Limite di questa prima versione: il permesso di Google dura circa 1 ora e ogni volta che
-// riapri l'app devi toccare "Collega". Quando c'è Supabase lo spostiamo lì e diventa automatico.
+// SEMPRE COLLEGATO (dal 6 novembre 2026): se su Supabase c'è la funzione "google" con il suo
+// Client ID, il collegamento lo tiene il server. Colleghi UNA volta sola; poi ogni ora l'app si fa
+// dare dalla funzione un permesso nuovo da sola, e all'apertura si ricollega senza toccare niente.
+// Se la funzione non c'è, resta il modo vecchio: Client ID incollato a mano e "Collega" ogni ora.
 
 const SCOPE_CALENDARIO = [
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly", // vedere l'elenco dei calendari
@@ -22,7 +24,8 @@ const SCOPE_CALENDARIO = [
 const API_CALENDARIO = "https://www.googleapis.com/calendar/v3";
 const OGNI_QUANTO_SYNC = 30 * 1000;
 
-const Google = { token: null, scadenza: 0, stato: "spento", errore: "", timer: null, inCorso: false, daRidisegnare: false };
+const Google = { token: null, scadenza: 0, stato: "spento", errore: "", timer: null, inCorso: false, daRidisegnare: false,
+  server: null }; // { client_id, collegato, email } dalla funzione "google" (null = non c'è / non ancora chiesto)
 
 const urlEventi = (calId) => `${API_CALENDARIO}/calendars/${encodeURIComponent(calId)}/events`;
 const calendariGoogle = () => stato.google.calendari || [];
@@ -41,7 +44,79 @@ function statoGoogle() {
   if (Google.stato === "attivo") return { testo: `Google · aggiornato ${quandoFa(stato.google.ultimoSync)}`, classe: "attiva" };
   if (Google.stato === "collegamento") return { testo: "Collegamento a Google…", classe: "" };
   if (Google.stato === "errore") return { testo: "Google: da ricollegare", classe: "pericolo" };
-  return { testo: stato.google.clientId ? "Collega Google Calendar" : "Google Calendar", classe: "" };
+  return { testo: stato.google.clientId || googleDalServer() ? "Collega Google Calendar" : "Google Calendar", classe: "" };
+}
+
+// ---------- Collegamento tenuto dal server (funzione "google" su Supabase) ----------
+const googleDalServer = () => !!(Google.server && Google.server.client_id);
+const collegatoSulServer = () => googleDalServer() && Google.server.collegato;
+// c'è un permesso valido, oppure il server può darcene uno nuovo
+const googlePronto = () => (Google.token && Date.now() < Google.scadenza) || collegatoSulServer();
+
+async function chiamaFunzioneGoogle(azione, dati = {}) {
+  if (typeof sb === "undefined" || !sb || typeof utenteSupabase === "undefined" || !utenteSupabase) throw new Error("Devi fare il login con il tuo account.");
+  const { data, error } = await sb.functions.invoke("google", { body: { azione, ...dati } });
+  if (error) {
+    const err = new Error("La funzione «google» non risponde.");
+    try { err.codice = error.context.status; const c = await error.context.json(); if (c && c.errore) err.message = c.errore; } catch (e) { /* messaggio generico */ }
+    throw err;
+  }
+  return data;
+}
+
+async function caricaConfigGoogle() {
+  try { Google.server = await chiamaFunzioneGoogle("config"); }
+  catch (e) { Google.server = null; }   // funzione non pubblicata: resta il modo vecchio
+  return Google.server;
+}
+
+function salvaToken(r) {
+  Google.token = r.access_token;
+  Google.scadenza = Date.now() + (Number(r.expires_in) - 60) * 1000;
+}
+
+// Permesso nuovo da 1 ora, chiesto al server (nessuna finestra)
+async function tokenDalServer() {
+  try { salvaToken(await chiamaFunzioneGoogle("token")); }
+  catch (e) {
+    if (e.codice === 409 && Google.server) Google.server.collegato = false; // revocato su Google: va ricollegato
+    throw e;
+  }
+}
+
+// La prima volta: finestra di Google → codice → la funzione lo scambia e tiene il permesso a lungo termine
+async function collegaDalServer() {
+  await caricaScriptGoogle();
+  const code = await new Promise((ok, ko) => {
+    const client = google.accounts.oauth2.initCodeClient({
+      client_id: Google.server.client_id,
+      scope: SCOPE_CALENDARIO,
+      ux_mode: "popup",
+      select_account: true,
+      callback: (r) => (r.error ? ko(new Error(r.error_description || r.error)) : ok(r.code)),
+      error_callback: (e) => ko(new Error(e.type === "popup_closed" ? "Finestra di Google chiusa" : e.message || e.type || "Google ha rifiutato")),
+    });
+    client.requestCode();
+  });
+  const r = await chiamaFunzioneGoogle("collega", { code });
+  salvaToken(r);
+  Google.server.collegato = true;
+  Google.server.email = r.email || null;
+}
+
+// Il permesso è scaduto? Se il server può, ne prende uno nuovo da solo
+async function assicuraToken() {
+  if (Google.token && Date.now() < Google.scadenza) return;
+  if (collegatoSulServer()) return tokenDalServer();
+  throw new Error("Permesso di Google scaduto: tocca Collega");
+}
+
+// All'apertura dell'app (dopo il login): se eri già collegato, si ricollega da solo
+async function avviaGoogleAutomatico() {
+  const conf = await caricaConfigGoogle();
+  if (!conf || !conf.client_id) return;
+  caricaScriptGoogle().catch(() => {});
+  if (conf.collegato && Google.stato !== "attivo") await collegaGoogle(true);
 }
 
 // ---------- Permesso (token) da Google ----------
@@ -57,6 +132,8 @@ function caricaScriptGoogle() {
 }
 
 async function chiediToken(conFinestra) {
+  // collegamento tenuto dal server: finestra solo se non sei ancora collegato
+  if (googleDalServer()) return Google.server.collegato ? tokenDalServer() : collegaDalServer();
   await caricaScriptGoogle();
   return new Promise((ok, ko) => {
     const client = google.accounts.oauth2.initTokenClient({
@@ -78,14 +155,19 @@ async function chiediToken(conFinestra) {
   });
 }
 
-async function chiamaGoogle(metodo, url, corpo) {
-  if (!Google.token || Date.now() > Google.scadenza) throw new Error("Permesso di Google scaduto: tocca Collega");
+async function chiamaGoogle(metodo, url, corpo, giaRiprovato = false) {
+  await assicuraToken();
   const r = await fetch(url, {
     method: metodo,
     headers: { Authorization: `Bearer ${Google.token}`, ...(corpo ? { "Content-Type": "application/json" } : {}) },
     body: corpo ? JSON.stringify(corpo) : undefined,
   });
-  if (r.status === 401) { Google.token = null; throw new Error("Permesso di Google scaduto: tocca Collega"); }
+  if (r.status === 401) {
+    Google.token = null;
+    // con il server: un permesso nuovo e riproviamo una volta
+    if (collegatoSulServer() && !giaRiprovato) return chiamaGoogle(metodo, url, corpo, true);
+    throw new Error("Permesso di Google scaduto: tocca Collega");
+  }
   if (metodo === "DELETE" && (r.status === 404 || r.status === 410)) return null; // già eliminato
   if (!r.ok) throw new Error(`Google ha risposto con un errore (${r.status})`);
   return r.status === 204 ? null : r.json();
@@ -168,7 +250,7 @@ function daGoogle(g, cal, esistente) {
 }
 
 async function sincronizzaGoogle() {
-  if (Google.inCorso || !Google.token) return;
+  if (Google.inCorso || !googlePronto()) return;
   Google.inCorso = true;
   try {
     await aggiornaElencoCalendari();
@@ -324,7 +406,7 @@ function promemoriaVersoGoogle(p) {
 async function inviaPromemoriaAGoogle(p) {
   if (!p.scadenza) { delete p.da_inviare; return; }       // senza data: resta solo nell'app
   const cal = calendarioPromemoria();
-  if (!cal || !Google.token || Date.now() > Google.scadenza || PromemoriaInInvio.has(p.id)) return;
+  if (!cal || !googlePronto() || PromemoriaInInvio.has(p.id)) return;
   PromemoriaInInvio.add(p.id);
   try {
     if (p.google_id) {
@@ -346,7 +428,7 @@ async function eliminaPromemoriaDaGoogle(p) {
   if (!p.google_id) return;
   const cal = calendarioPromemoria();
   try {
-    if (!cal || !Google.token || Date.now() > Google.scadenza) throw new Error("Google non collegato");
+    if (!cal || !googlePronto()) throw new Error("Google non collegato");
     await chiamaGoogle("DELETE", `${urlEventi(cal.id)}/${encodeURIComponent(p.google_id)}`);
   } catch (err) {
     // lo cancelliamo da Google al prossimo collegamento
@@ -388,10 +470,10 @@ async function sincronizzaPromemoria() {
 }
 
 // ---------- Collegare / scollegare ----------
-async function collegaGoogle() {
+// silenzioso = all'apertura dell'app: non chiude finestre aperte e non ridisegna subito
+async function collegaGoogle(silenzioso = false) {
   Google.stato = "collegamento";
-  chiudiModale();
-  disegna();
+  if (silenzioso !== true) { chiudiModale(); disegna(); }
   try {
     await chiediToken(!stato.google.collegato);
     stato.google.collegato = true;
@@ -409,7 +491,11 @@ async function collegaGoogle() {
 }
 
 function scollegaGoogle() {
-  if (Google.token && window.google) google.accounts.oauth2.revoke(Google.token, () => {});
+  if (collegatoSulServer()) {
+    Google.server.collegato = false;
+    Google.server.email = null;
+    chiamaFunzioneGoogle("scollega").catch(() => {});   // toglie il permesso anche su Google
+  } else if (Google.token && window.google) google.accounts.oauth2.revoke(Google.token, () => {});
   clearInterval(Google.timer);
   Google.token = null;
   Google.stato = "spento";
@@ -432,11 +518,12 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // ---------- Finestra "Google Calendar" ----------
-function apriPannelloGoogle() {
+async function apriPannelloGoogle() {
   const g = stato.google;
+  if (Google.server === null) await caricaConfigGoogle();   // c'è la funzione "google" sul server?
   const clientId = h("input", { type: "text", value: g.clientId, placeholder: "123456789-abc….apps.googleusercontent.com", required: true });
 
-  if (!g.clientId) {
+  if (!g.clientId && !googleDalServer()) {
     apriModale("Collega Google Calendar",
       h("p", { class: "testo-leggero" }, "Serve una volta sola: crei un \"Client ID\" gratuito su Google e lo incolli qui. Non è una chiave segreta."),
       h("ol", { class: "passi" },
@@ -475,7 +562,13 @@ function apriPannelloGoogle() {
   apriModale("Google Calendar",
     h("dl", { class: "dettagli" },
       h("dt", {}, "Stato"), h("dd", {}, attivo ? "Collegato e sincronizzato" : Google.stato === "errore" ? "Da ricollegare" : "Non collegato in questa sessione"),
-      h("dt", {}, "Ultimo aggiornamento"), h("dd", {}, quandoFa(g.ultimoSync))),
+      h("dt", {}, "Ultimo aggiornamento"), h("dd", {}, quandoFa(g.ultimoSync)),
+      googleDalServer() && Google.server.email && h("dt", {}, "Account"),
+      googleDalServer() && Google.server.email && h("dd", {}, Google.server.email)),
+    googleDalServer() && h("p", { class: "testo-leggero piccolo" },
+      Google.server.collegato
+        ? "Sempre collegato: non devi più premere «Collega». Si ricollega da solo ogni volta che apri l'app."
+        : "Collega una volta sola: poi resta collegato per sempre, anche quando chiudi e riapri l'app."),
     Google.errore && h("p", { class: "avviso-errore" }, Google.errore),
     cal.length > 0 && h("fieldset", { class: "articoli" },
       h("legend", {}, "Calendari da mostrare"),
@@ -484,8 +577,8 @@ function apriPannelloGoogle() {
       "Vuoi i promemoria anche su Google (e sul telefono)? Su Google Calendar crea un calendario chiamato esattamente «Promemoria», poi premi «Aggiorna ora»."),
     h("p", { class: "testo-leggero piccolo" }, "«Scuola» = calendario di H-Farm: i suoi eventi sono gialli e compaiono nella sezione Lezioni. Mentre l'app è aperta controlla Google ogni 30 secondi. I calendari in abbonamento (come Canvas) li aggiorna Google da solo ogni qualche ora: qui li vedi quando li vede anche il telefono. I nuovi eventi creati qui vanno nel calendario principale."),
     h("div", { class: "azioni-modale" },
-      h("button", { class: "bottone-secondario", type: "button", onclick: () => { stato.google.clientId = ""; salva(); apriPannelloGoogle(); } }, "Cambia Client ID"),
-      (attivo || g.collegato) && h("button", { class: "bottone-secondario pericolo", type: "button", onclick: scollegaGoogle }, "Scollega"),
+      !googleDalServer() && h("button", { class: "bottone-secondario", type: "button", onclick: () => { stato.google.clientId = ""; salva(); apriPannelloGoogle(); } }, "Cambia Client ID"),
+      (attivo || g.collegato || collegatoSulServer()) && h("button", { class: "bottone-secondario pericolo", type: "button", onclick: scollegaGoogle }, "Scollega"),
       attivo
         ? h("button", { class: "bottone-accento", type: "button", onclick: () => { chiudiModale(); sincronizzaGoogle(); } }, icona("sync", 16), "Aggiorna ora")
         : h("button", { class: "bottone-accento", type: "button", onclick: collegaGoogle }, icona("google", 16), "Collega")));
