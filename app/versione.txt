@@ -1,0 +1,3 @@
+X-ECUTE - ultimo aggiornamento pubblicato da Edoardo: 6 novembre 2026, 17:00
+(Questo file serve solo a far ripartire la pubblicazione su Vercel dopo un Push di Luca:
+basta cambiare la data qui sopra, fare Commit e Push.)
