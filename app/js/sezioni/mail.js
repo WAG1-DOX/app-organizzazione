@@ -10,7 +10,9 @@ function eImportante(mail) {
 }
 
 Viste.mail = function (box) {
-  const conMotivo = mailFinte.map((m) => ({ ...m, motivo: eImportante(m) }));
+  // Il collegamento a Gmail non c'è ancora: per ora nessuna mail (prima c'erano mail di esempio)
+  const elencoMail = [];
+  const conMotivo = elencoMail.map((m) => ({ ...m, motivo: eImportante(m) }));
   const importanti = conMotivo.filter((m) => m.motivo);
 
   const riga = (m) => h("li", { class: `riga-mail${m.motivo ? " importante" : ""}` },
@@ -22,12 +24,10 @@ Viste.mail = function (box) {
       h("small", { class: "testo-leggero" }, dataBreve(new Date(m.data))),
       m.motivo && h("span", { class: "pill piccola urgente", title: `Importante per ${m.motivo}` }, "importante")));
 
-  const elenco = pannello("", "Mail importanti", h("span", { class: "pill" }, `${importanti.length} su ${mailFinte.length}`),
-    h("p", { class: "avviso-esempio" }, "Queste sono mail di esempio: il collegamento vero a Gmail arriva dopo il login con Google."),
-    h("ul", { class: "lista-mail" }, importanti.map(riga)),
-    h("details", { class: "altre-mail" },
-      h("summary", {}, `Le altre ${mailFinte.length - importanti.length} (non importanti)`),
-      h("ul", { class: "lista-mail" }, conMotivo.filter((m) => !m.motivo).map(riga))));
+  const elenco = pannello("", "Mail importanti", h("span", { class: "pill" }, `${importanti.length} su ${elencoMail.length}`),
+    elencoMail.length
+      ? h("ul", { class: "lista-mail" }, importanti.map(riga))
+      : h("p", { class: "avviso-esempio" }, "Il collegamento a Gmail arriva presto. Intanto puoi decidere qui a fianco cosa è importante per te: quando sarà collegato, vedrai qui solo quelle mail."));
 
   // ---------- Regole modificabili ----------
   const gruppoRegole = (titolo, chiave, segnaposto) => {

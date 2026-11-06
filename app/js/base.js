@@ -3,8 +3,8 @@
 // Ogni sezione (file in js/sezioni/) aggiunge qui la sua funzione che la disegna.
 const Viste = {};
 
-// Per ora fingiamo di essere Luca. Col login vero questo arriverà da Supabase.
-const utenteAttuale = profiliFinti.find((p) => p.id === "u-luca");
+// Chi sta usando l'app: si riempie al login (accesso.js) con i dati del tuo account.
+const utenteAttuale = { id: "", nome: "", email: "", avatar_url: null };
 
 // ---------- Date e orari ----------
 const GIORNI_BREVI = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
@@ -63,69 +63,38 @@ const euro = (n) => formatoEuro.format(n);
 
 const nuovoId = (prefisso) => `${prefisso}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
-// Numero "casuale" ma sempre uguale per lo stesso testo (serve per lo storico finto)
-function casuale(seme) {
-  let h = 2166136261;
-  for (const c of seme) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
-  return ((h >>> 0) % 10000) / 10000;
-}
-
 // ---------- Stato: tutti i dati dell'app ----------
 // Per ora si salvano nel browser (localStorage). Quando c'è Supabase, si salveranno lì.
 const CHIAVE_SALVATAGGIO = "organizza-v2";
 
-function creaStoricoFinto() {
-  const registro = {}, movimenti = [];
-  const categorie = Object.keys(budgetFinto.categorie);
-  const descrizioni = { Cibo: "Merenda al bar", Svago: "Cinema con amici", Trasporti: "Biglietto bus", Scuola: "Fotocopie", Altro: "Varie" };
-  const oggi = new Date();
-
-  for (let i = 0; i <= 75; i++) {
-    const d = aggiungiGiorni(oggi, -i);
-    const k = chiaveGiorno(d);
-    if (d.getDate() === 1) {
-      movimenti.push({ id: `pg-${k}`, tipo: "entrata", importo: 150, categoria: "Paghetta", descrizione: "Paghetta del mese", data: k });
-    }
-    if (i === 0) continue; // oggi lo compili tu
-    registro[k] = {};
-    for (const a of attivitaQuotidianeFinte) {
-      const r = casuale(k + a.id);
-      registro[k][a.id] = r < 0.88 ? a.volte_al_giorno : r < 0.95 ? a.volte_al_giorno - 1 : 0;
-    }
-    if (casuale(k + "spesa") < 0.55) {
-      const cat = categorie[Math.floor(casuale(k + "cat") * categorie.length)];
-      const importo = Math.round((1.5 + casuale(k + "imp") * 7) * 100) / 100;
-      movimenti.push({ id: `sp-${k}`, tipo: "uscita", importo, categoria: cat, descrizione: descrizioni[cat], data: k });
-    }
-  }
-  return { registro, movimenti };
-}
-
+// Si parte da zero: niente dati di esempio. Le cose da cui partire le scegli
+// nella configurazione guidata (js/configurazione.js), tra i suggerimenti di suggerimenti.js.
 function statoIniziale() {
-  const storico = creaStoricoFinto();
   return {
-    eventi: structuredClone(eventiFinti),
-    quotidiane: structuredClone(attivitaQuotidianeFinte),
-    modelliExtra: structuredClone(modelliExtraFinti),
-    promemoria: structuredClone(promemoriaFinti),
-    movimenti: storico.movimenti,
-    budget: structuredClone(budgetFinto),
-    registro: storico.registro, // { "2026-11-05": { "q-denti": 2, ... } } quante volte fatta ogni attività
+    eventi: [],
+    quotidiane: [],             // { id, nome, minuti, volte_al_giorno, icona }
+    modelliExtra: [],           // { id, nome, minuti, tipo }
+    promemoria: [],             // { id, testo, scadenza, ora, fatto }
+    movimenti: [],              // { id, tipo: "entrata" | "uscita", importo, categoria, descrizione, data }
+    budget: { mensile: 0, categorie: {} },   // 0 = nessun budget
+    registro: {},               // { "2026-11-05": { "q-denti": 2, ... } } quante volte fatta ogni attività
     acqua: {},                  // { "2026-11-05": 5 } bicchieri d'acqua
     pasti: {},                  // { "2026-11-05": { colazione: "latte e biscotti" } }
-    regoleMail: structuredClone(regoleMailFinte),
-    materie: structuredClone(materieFinte),
-    orario: structuredClone(orarioFinto),
-    listaSpesa: structuredClone(listaSpesaFinta),
+    regoleMail: structuredClone(regoleMailIniziali),
+    materie: [],                // { id, nome, prof, aula, colore }
+    orario: [],                 // { id, giorno, inizio, fine, materia_id } (serve solo senza il calendario H-Farm)
+    listaSpesa: [],
     scontrini: [],              // { id, negozio, data, totale, movimento_id, foto_id }
     google: { clientId: "", collegato: false, ultimoSync: null },
-    microModelli: structuredClone(microModelliFinti),
-    routineBase: structuredClone(routineBaseFinta),
+    microModelli: [],           // { id, nome, minuti, categoria, note, quotidiana_id? }
+    routineBase: [],            // { inizio: "07:00", modello_id }
     giornate: {},               // { "2026-11-05": [ { id, nome, inizio: "07:45", minuti, categoria, note, fatto } ] }
     obiettivi: {},              // { "2026-11-09": [ { id, testo, fatto } ] } obiettivi per settimana (chiave = lunedì)
     sonno: { sveglia: "07:00", dormire: "23:00", giorni: {} },   // orari predefiniti + eccezioni per giorno
-    categorieObiettivi: structuredClone(categorieObiettiviFinte),
-    obiettiviLungo: structuredClone(obiettiviLungoFinti),
+    categorieObiettivi: [],     // { id, nome, colore }
+    obiettiviLungo: [],
+    // configurazione guidata: completata = già fatta; dal = giorno da cui contano Monitor e punteggi
+    configurazione: { completata: false, dal: oggiChiave() },
   };
 }
 
@@ -133,14 +102,20 @@ function caricaStato() {
   const base = statoIniziale();
   try {
     const salvato = JSON.parse(localStorage.getItem(CHIAVE_SALVATAGGIO));
-    // se nel salvataggio manca qualcosa di nuovo, lo prendiamo dai dati finti
+    // se nel salvataggio manca qualcosa di nuovo, lo prendiamo dallo stato vuoto
+    // salvataggio di una versione vecchia (senza "configurazione") = dati di esempio: si riparte
+    // da zero, tenendo solo il Client ID di Google. Se hai l'account, i tuoi dati veri arrivano da Supabase.
+    if (salvato && salvato.eventi && !salvato.configurazione) {
+      if (salvato.google && salvato.google.clientId) base.google.clientId = salvato.google.clientId;
+      return base;
+    }
     if (salvato && salvato.eventi) {
       const s = { ...base, ...salvato };
       // dati salvati con versioni vecchie dell'app: aggiungiamo quello che manca
       for (const i of s.listaSpesa) if (!i.categoria) i.categoria = indovinaCategoria(i.nome);
       return s;
     }
-  } catch (e) { /* niente salvataggio: si riparte dai dati finti */ }
+  } catch (e) { /* niente salvataggio: si parte da zero */ }
   return base;
 }
 
@@ -395,7 +370,14 @@ const usciteDelGiorno = (k) =>
   stato.movimenti.filter((m) => m.tipo === "uscita" && m.data === k).reduce((s, m) => s + m.importo, 0);
 
 const giorniNelMese = (anno, mese) => new Date(anno, mese + 1, 0).getDate();
-const budgetGiornaliero = (d) => stato.budget.mensile / giorniNelMese(d.getFullYear(), d.getMonth());
+// Categorie delle uscite: quelle del tuo budget (o, se non l'hai ancora fatto, alcune di base)
+const categorieUscite = () => {
+  const c = Object.keys(stato.budget.categorie);
+  return c.length ? c : ["Cibo", "Svago", "Trasporti", "Scuola", "Altro"];
+};
+
+// Budget di un giorno. Senza budget (0) non c'è limite: Infinity.
+const budgetGiornaliero = (d) => stato.budget.mensile > 0 ? stato.budget.mensile / giorniNelMese(d.getFullYear(), d.getMonth()) : Infinity;
 
 function movimentiDelMese(anno, mese) {
   const prefisso = `${anno}-${pad(mese + 1)}`;
@@ -421,7 +403,9 @@ function punteggioMese(anno, mese) {
   for (let g = 1; g <= giorniNelMese(anno, mese); g++) {
     const d = new Date(anno, mese, g);
     const k = chiaveGiorno(d);
-    const futuro = k > oggiK;
+    // i giorni prima che iniziassi a usare l'app non contano (né in bene né in male)
+    const dal = (stato.configurazione && stato.configurazione.dal) || "";
+    const futuro = k > oggiK || k < dal;
     const oggi = k === oggiK;
     const q = quotaQuotidiane(k);
     const uscite = usciteDelGiorno(k);

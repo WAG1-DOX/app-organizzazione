@@ -20,7 +20,7 @@ const Social = {
 
 // I gruppi da mostrare nel calendario: quelli veri se hai l'account, altrimenti quelli finti
 function gruppiDisponibili() {
-  return utenteSupabase ? Social.gruppi : gruppiFinti;
+  return utenteSupabase ? Social.gruppi : [];
 }
 
 const nomeDi = (id) => (Social.profili.get(id) || {}).nome || "Qualcuno";

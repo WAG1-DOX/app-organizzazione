@@ -61,7 +61,9 @@ Viste.home = function (box) {
   const tessere = pannello("card-tessere", "Riepilogo", h("a", { class: "icona-tonda piccola", href: "#routine", "aria-label": "Apri il monitor" }, icona("freccia", 16)),
     h("div", { class: "tessere" },
       tessera("Routine di oggi", `${Math.round(routine.quota * 100)}%`, `${routine.fatte} su ${routine.totali} fatte`, "#quotidiane", "sole"),
-      tessera("Budget rimasto", euro(rimasto), `su ${euro(stato.budget.mensile)} al mese`, "#spese", "portafoglio"),
+      stato.budget.mensile > 0
+        ? tessera("Budget rimasto", euro(rimasto), `su ${euro(stato.budget.mensile)} al mese`, "#spese", "portafoglio")
+        : tessera("Spese del mese", euro(soldi.uscite), "nessun budget impostato", "#spese", "portafoglio"),
       tessera("Promemoria", String(promemoriaAperti.length), "ancora da fare", "#promemoria", "campana"),
       tessera("Punteggio del mese", `${mese.punteggio}`, `${mese.rispettati} giorni rispettati`, "#routine", "griglia")));
 

@@ -60,7 +60,7 @@ cambia, deve aggiornare questo file e dirlo all'altro.
 | `dati_personali` | `utente_id`, `chiave` (es. `movimenti`, `lista_spesa`, `sonno`…, elenco in `app/tabelle-nuove.md`), `valore` (JSON), `aggiornato_il`. Una riga per chiave per utente; ognuno vede solo le sue |
 | `messaggi` | `id`, `mittente_id`, `destinatario_id`, `testo`, `evento_id` (opzionale), `letto` (true/false), `creato_il` |
 
-Esempio di evento come arriverà all'app (usare questa forma anche nei dati finti):
+Esempio di evento come arriverà all'app (usare questa forma per tutti gli eventi):
 ```json
 {
   "id": "e1",
@@ -80,9 +80,9 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 ## Divisione del lavoro (cartelle separate = niente conflitti)
 - **Edoardo → database**: cartella `supabase/` (file SQL: tabelle, Row Level
   Security, funzioni). Account e progetto Supabase.
-- **Luca → app e design**: cartella `app/` (HTML, CSS, JavaScript). Per ora
-  usa **dati finti** in `app/dati-finti.js` con esattamente i campi qui sopra;
-  quando il database è pronto si sostituiscono con le chiamate a Supabase.
+- **Luca → app e design**: cartella `app/` (HTML, CSS, JavaScript).
+  Niente dati finti: l'app parte vuota e al primo accesso c'è la configurazione guidata
+  (`app/js/configurazione.js`), che propone le idee di `app/suggerimenti.js`.
 - Tecnologia app: HTML + CSS + JavaScript semplice (niente framework per ora),
   poi la libreria `@supabase/supabase-js` per collegarsi al database.
 - `CLAUDE.md` lo possono modificare entrambi, ma solo per aggiornare decisioni.
@@ -157,5 +157,9 @@ Esempio di evento come arriverà all'app (usare questa forma anche nei dati fint
 - Gli id dell'app (es. `e-abc`) diventano uuid sempre uguali con `uuidDi()` (SHA-256), calcolati insieme all'id dell'account
   (così l'"e1" di Luca e l'"e1" di Edoardo sono due righe diverse: prima il secondo veniva bloccato dalla sicurezza).
 - Sezione nuova con dati nuovi? Aggiungi il campo di `stato` a `CHIAVI_CLOUD`, sennò non si salva online.
-- Con il login il pulsante "Ricomincia da capo" è nascosto (rimetterebbe i dati finti sul database).
+- Con il login il pulsante "Ricomincia da capo" è nascosto (svuoterebbe solo il browser, non il database).
+- Chiave `configurazione` in `dati_personali` = `{ completata, dal }`: se manca, al login l'app fa UNA volta
+  la pulizia dei vecchi dati di esempio (`pulisciDatiDiEsempio`): copia di sicurezza nella chiave
+  `backup_prima_pulizia`, sezioni svuotate, eventi di esempio e1…e6 tolti (quelli di Google restano).
+  Poi parte la configurazione guidata (si rifà dal menu "Configurazione guidata").
 - Indicatore in alto sotto l'email (`#stato-cloud`): "Salvato" / errore.

@@ -21,12 +21,13 @@ Viste.spese = function (box) {
       h("span", { class: "tessera-icona" }, icona(nomeIcona, 18)),
       h("small", {}, titolo), h("strong", {}, valore), extra);
 
-  const quotaBudget = Math.min(1, t.uscite / budget);
+  const conBudget = budget > 0;
+  const quotaBudget = conBudget ? Math.min(1, t.uscite / budget) : 0;
   const numeri = h("div", { class: "riga-numeri" },
     numero("Entrate", euro(t.entrate), "positivo", "frecciaSu"),
     numero("Uscite", euro(t.uscite), "negativo", "frecciaGiu"),
     numero("Saldo del mese", euro(t.saldo), t.saldo >= 0 ? "" : "negativo", "portafoglio"),
-    numero("Budget rimasto", euro(rimasto), rimasto >= 0 ? "accento" : "negativo", "griglia",
+    numero("Budget rimasto", conBudget ? euro(rimasto) : "—", rimasto >= 0 || !conBudget ? "accento" : "negativo", "griglia",
       h("span", { class: "barra-binario" }, h("span", { style: `width:${quotaBudget * 100}%`, class: quotaBudget > 0.9 ? "rosso" : "" }))));
 
   // ---------- Grafico ----------
@@ -37,15 +38,18 @@ Viste.spese = function (box) {
   const perCategoria = {};
   for (const m of t.lista) if (m.tipo === "uscita") perCategoria[m.categoria] = (perCategoria[m.categoria] || 0) + m.importo;
 
-  const categorie = pannello("", "Budget per categoria", h("span", { class: "pill" }, `${euro(budget)} al mese`),
+  const categorie = pannello("", "Budget per categoria",
+    h("button", { class: "pill", type: "button", title: "Cambia il budget", onclick: apriModificaBudget },
+      conBudget ? `${euro(budget)} al mese` : "Imposta", " ", icona("matita", 12)),
+    !conBudget && h("p", { class: "vuoto" }, "Non hai ancora un budget. Premi «Imposta» per decidere quanto spendere al mese."),
     h("ul", { class: "lista-budget" }, Object.entries(stato.budget.categorie).map(([cat, limite]) => {
       const speso = perCategoria[cat] || 0;
-      const quota = speso / limite;
+      const quota = limite > 0 ? speso / limite : 0;
       return h("li", {},
         h("div", { class: "budget-riga" }, h("strong", {}, cat), h("span", { class: quota > 1 ? "testo-rosso" : "testo-leggero" }, `${euro(speso)} / ${euro(limite)}`)),
         h("span", { class: "barra-binario" }, h("span", { style: `width:${Math.min(1, quota) * 100}%`, class: quota > 1 ? "rosso" : quota > 0.8 ? "arancio" : "" })));
     })),
-    h("p", { class: "testo-leggero piccolo" }, `Budget di ogni giorno: ${euro(budgetGiornaliero(meseSpese))}. Se lo superi, il quadratino del Monitor resta nero.`));
+    conBudget && h("p", { class: "testo-leggero piccolo" }, `Budget di ogni giorno: ${euro(budgetGiornaliero(meseSpese))}. Se lo superi, il quadratino del Monitor resta nero.`));
 
   // ---------- Nuovo movimento + elenco ----------
   let tipoScelto = "uscita";
@@ -55,7 +59,7 @@ Viste.spese = function (box) {
   const data = h("input", { type: "date", value: oggiChiave(), required: true });
   const riempiCategorie = () => {
     categoria.innerHTML = "";
-    const elenco = tipoScelto === "uscita" ? Object.keys(stato.budget.categorie) : categorieEntrate;
+    const elenco = tipoScelto === "uscita" ? categorieUscite() : categorieEntrate;
     for (const c of elenco) categoria.append(h("option", { value: c }, c));
   };
   riempiCategorie();
@@ -104,3 +108,52 @@ Viste.spese = function (box) {
   box.append(numeri, h("div", { class: "griglia-due larga-sinistra" },
     h("div", { class: "colonna" }, grafico, categorie), movimenti));
 };
+
+// ---------- Cambiare il budget: un importo per ogni categoria (il totale è la somma) ----------
+// Lo usa anche la configurazione guidata (editorBudget)
+function editorBudget(categorie) {
+  // categorie: { "Cibo": 80, ... } → righe modificabili; restituisce { elemento, leggi() }
+  const righe = Object.entries(categorie).map(([nome, euroMese]) => ({ nome, euroMese }));
+  const lista = h("ul", { class: "editor-budget" });
+  const totale = h("strong", {});
+  const ridisegna = () => {
+    lista.innerHTML = "";
+    for (const r of righe) {
+      const importo = h("input", { type: "number", min: 0, step: 1, value: r.euroMese, "aria-label": `Budget ${r.nome}`,
+        oninput: (ev) => { r.euroMese = Math.max(0, Number(ev.target.value) || 0); aggiornaTotale(); } });
+      lista.append(h("li", {}, h("span", {}, r.nome), h("span", { class: "editor-budget-euro" }, importo, "€"),
+        h("button", { class: "icona-tonda piccola fantasma", type: "button", "aria-label": `Togli ${r.nome}`,
+          onclick: () => { righe.splice(righe.indexOf(r), 1); ridisegna(); } }, icona("x", 12))));
+    }
+    aggiornaTotale();
+  };
+  const aggiornaTotale = () => { totale.textContent = euro(righe.reduce((s, r) => s + r.euroMese, 0)); };
+  const nuova = h("input", { type: "text", placeholder: "Nuova categoria, es. Regali", maxlength: 30 });
+  const aggiungi = h("div", { class: "modulo-chip" }, nuova,
+    h("button", { class: "icona-tonda piccola", type: "button", "aria-label": "Aggiungi categoria", onclick: () => {
+      const n = nuova.value.trim();
+      if (n && !righe.some((r) => r.nome.toLowerCase() === n.toLowerCase())) righe.push({ nome: n, euroMese: 0 });
+      nuova.value = "";
+      ridisegna();
+    } }, icona("piu", 14)));
+  ridisegna();
+  return {
+    elemento: h("div", { class: "colonna" }, lista, aggiungi, h("p", { class: "testo-leggero" }, "Totale al mese: ", totale)),
+    leggi: () => {
+      const cat = Object.fromEntries(righe.map((r) => [r.nome, r.euroMese]));
+      return { mensile: righe.reduce((s, r) => s + r.euroMese, 0), categorie: cat };
+    },
+  };
+}
+
+function apriModificaBudget() {
+  const partenza = Object.keys(stato.budget.categorie).length
+    ? stato.budget.categorie
+    : Object.fromEntries(SUGGERIMENTI.categorieSpesa.map((c) => [c.nome, c.budget]));
+  const ed = editorBudget(partenza);
+  apriModale("Budget del mese",
+    h("p", { class: "testo-leggero" }, "Quanto vuoi spendere al mese in ogni categoria? Metti 0 dove non vuoi un limite."),
+    ed.elemento,
+    h("div", { class: "azioni-modale" },
+      h("button", { class: "bottone-accento", type: "button", onclick: () => { stato.budget = ed.leggi(); chiudiModale(); aggiorna(); } }, "Salva")));
+}

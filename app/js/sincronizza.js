@@ -19,6 +19,7 @@ const CHIAVI_CLOUD = {
   regoleMail: "regole_mail", microModelli: "micro_modelli", routineBase: "routine_base",
   giornate: "giornate", obiettivi: "obiettivi_settimana", sonno: "sonno",
   categorieObiettivi: "categorie_obiettivi", obiettiviLungo: "obiettivi_lungo",
+  configurazione: "configurazione",   // configurazione guidata fatta o no (vedi configurazione.js)
 };
 // di Google salviamo solo le scelte (Client ID e calendari da mostrare), non il permesso
 const CHIAVE_GOOGLE = "google_impostazioni";
@@ -45,7 +46,9 @@ const cacheUuid = new Map();
 async function uuidDi(id) {
   id = String(id);
   if (FORMA_UUID.test(id)) return id.toLowerCase();
-  const chiave = `${mioId() || ""}|${id}`;
+  return uuidDaTesto(`${mioId() || ""}|${id}`);
+}
+async function uuidDaTesto(chiave) {
   if (cacheUuid.has(chiave)) return cacheUuid.get(chiave);
   const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(chiave)));
   hash[6] = (hash[6] & 0x0f) | 0x50; // "versione 5": è un uuid valido
@@ -179,6 +182,7 @@ async function avviaCloud() {
     const vuoto = !cloud.eventi.length && !cloud.dati.length;
     if (vuoto) {
       // primo accesso: il database è vuoto, ci carichiamo quello che c'è in questo browser
+      // (i dati di esempio delle versioni vecchie li ha già tolti caricaStato in base.js)
       Cloud.eventiInviati.clear();
       Cloud.datiInviati.clear();
       Cloud.ultimoCaricamento = Date.now();
@@ -186,16 +190,54 @@ async function avviaCloud() {
       await applicaDalCloud(cloud, true);
     }
     Cloud.attivo = true;
+    // Una volta sola per account: via i dati di esempio delle versioni vecchie dell'app
+    const pulito = !vuoto && !cloud.dati.some((d) => d.chiave === "configurazione") && await pulisciDatiDiEsempio();
     // "Ricomincia da capo" riporterebbe i dati finti anche sul database: con l'account lo nascondiamo
     const reset = document.getElementById("bottone-reset");
     if (reset) reset.hidden = true;
-    if (vuoto) await inviaAlCloud();
+    if (vuoto || pulito) await inviaAlCloud();
     else statoCloud("Salvato", "ok");
   } catch (e) {
     // se non riusciamo a scaricare NON mandiamo niente: rischieremmo di sovrascrivere il database
     console.warn("Supabase: dati non scaricati", e && e.message);
     statoCloud("Non collegato al database: le modifiche restano su questo computer", "errore");
   }
+}
+
+// ---------- Pulizia una tantum dei dati di esempio ----------
+// Le versioni vecchie dell'app partivano con dati finti (eventi e1…e6, spese inventate, routine
+// a 100/100…) e li avevano salvati anche su Supabase. La prima volta che entri con questa versione:
+// 1) facciamo una copia di sicurezza di tutto in dati_personali, chiave "backup_prima_pulizia"
+//    (non la legge nessuno: serve solo se un giorno volessimo recuperare qualcosa);
+// 2) svuotiamo tutte le sezioni (Google Calendar resta collegato, gli eventi di Google restano);
+// 3) togliamo gli eventi di esempio dal database.
+// Poi parte la configurazione guidata.
+const ID_EVENTI_DI_ESEMPIO = ["e1", "e2", "e3", "e4", "e5", "e6"];
+
+async function pulisciDatiDiEsempio() {
+  const copia = { fatta_il: new Date().toISOString(), eventi: stato.eventi.filter((e) => !e.google_id) };
+  for (const campo of Object.keys(CHIAVI_CLOUD)) copia[campo] = stato[campo];
+  const { error } = await sb.from("dati_personali").upsert({
+    utente_id: mioId(), chiave: "backup_prima_pulizia", valore: copia, aggiornato_il: new Date().toISOString(),
+  });
+  if (error) { console.warn("Copia di sicurezza non riuscita: non pulisco niente", error.message); return false; }
+
+  // gli eventi di esempio: id "e1"… nel browser, oppure i loro uuid sul database
+  // (calcolati con l'account, o senza, come faceva la versione di prima)
+  const daTogliere = new Set();
+  for (const id of ID_EVENTI_DI_ESEMPIO) {
+    daTogliere.add(id);
+    daTogliere.add(await uuidDi(id));
+    daTogliere.add(await uuidDaTesto(id));
+  }
+  const eventi = [];
+  for (const e of stato.eventi) if (!daTogliere.has(e.id) && !daTogliere.has(await uuidDi(e.id))) eventi.push(e);
+
+  const nuovo = statoIniziale();
+  for (const campo of Object.keys(CHIAVI_CLOUD)) stato[campo] = nuovo[campo];
+  stato.eventi = eventi;
+  salva();
+  return true;
 }
 
 // ---------- Mandare le modifiche ----------

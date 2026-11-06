@@ -34,7 +34,8 @@ function disegna() {
   const sotto = document.getElementById("sottotitolo-pagina");
   titolo.innerHTML = "";
   if (sezione.id === "home") {
-    titolo.append("Ciao, ", h("span", { class: "testo-accento" }, utenteAttuale.nome));
+    if (utenteAttuale.nome) titolo.append("Ciao, ", h("span", { class: "testo-accento" }, utenteAttuale.nome));
+    else titolo.append("Ciao!");
     sotto.textContent = `${maiuscola(dataLunga(new Date()))} · ecco la tua giornata`;
   } else {
     titolo.textContent = sezione.nome;
@@ -169,7 +170,7 @@ bottonePiu.addEventListener("click", () => apriAggiungiAlCalendario());
 const bottoneReset = document.getElementById("bottone-reset");
 bottoneReset.querySelector(".icona").replaceWith(icona("ingranaggio", 18));
 bottoneReset.addEventListener("click", () => {
-  if (confirm("Vuoi cancellare tutto quello che hai salvato e tornare ai dati di esempio?")) ricominciaDaCapo();
+  if (confirm("Vuoi cancellare tutto quello che hai salvato in questo browser e ripartire da zero?")) ricominciaDaCapo();
 });
 
 document.querySelector(".icona-scintilla").replaceWith(icona("scintilla", 18));
@@ -237,6 +238,10 @@ avatar.title = "Esci dall'account";
 avatar.style.cursor = "pointer";
 avatar.addEventListener("click", esci);
 
+const bottoneConfigura = document.getElementById("bottone-configura");
+bottoneConfigura.querySelector(".icona").replaceWith(icona("ingranaggio", 18));
+bottoneConfigura.addEventListener("click", apriConfigurazione);
+
 const bottoneEsci = document.getElementById("bottone-esci");
 bottoneEsci.querySelector(".icona").replaceWith(icona("frecciaSu", 18));
 bottoneEsci.addEventListener("click", esci);
@@ -249,6 +254,8 @@ window.addEventListener("hashchange", disegna);
 avviaAccesso(async () => {
   await avviaCloud();
   disegna();
+  // la prima volta (o dopo la pulizia dei dati di esempio): configurazione guidata
+  if (serveConfigurazione()) apriConfigurazione();
   // gruppi e messaggi (chat.js): li scarichiamo subito, così il pallino dei non letti è giusto
   caricaSocial().then(ridisegnaChat);
 });

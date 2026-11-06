@@ -1543,3 +1543,78 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
 /* ===== Promemoria collegati a Google ===== */
 .promemoria-google { display: inline-flex; color: var(--testo-tenue); opacity: .7; }
 .promemoria-google svg { width: 12px; height: 12px; }
+
+/* ============================================================
+   CONFIGURAZIONE GUIDATA (primo accesso)
+   ============================================================ */
+body.in-configurazione { overflow: hidden; }
+.configura {
+  position: fixed; inset: 0; z-index: 90;
+  display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+  background:
+    radial-gradient(700px 420px at 50% 115%, rgba(209, 254, 23, 0.14), transparent 70%),
+    rgba(6, 6, 7, 0.92);
+  backdrop-filter: blur(10px);
+}
+.configura-box {
+  width: 100%; max-width: 640px; max-height: calc(100vh - 48px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 26px 28px; border-radius: 26px;
+  background: linear-gradient(165deg, #1a1a1d, #121214);
+  border: 1px solid var(--bordo); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+}
+.configura-testa { display: flex; align-items: center; gap: 10px; }
+.configura-logo { width: 26px; height: 26px; }
+.configura-contatore { flex: 1; color: var(--testo-leggero); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+.configura-barra { height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.configura-barra-piena { display: block; height: 100%; background: var(--accento); border-radius: inherit; transition: width .25s ease; }
+.configura-box h2 { margin: 8px 0 0; font-size: 26px; letter-spacing: -0.02em; }
+.configura-box > .testo-leggero { margin: 0; line-height: 1.5; }
+.configura-corpo { padding: 6px 0; }
+.configura-corpo .colonna { gap: 14px; }
+.configura-piede { display: flex; align-items: center; gap: 10px; padding: 12px 0 14px; border-top: 1px solid var(--bordo); position: sticky; bottom: -26px; background: #121214; margin-bottom: -14px; }
+.configura-piede .spazio { flex: 1; }
+.configura-piede .link-sottile { margin: 0; background: none; border: none; }
+.configura-gruppo { display: flex; flex-direction: column; gap: 8px; }
+
+/* le "pastiglie" da toccare per scegliere */
+.scelte { display: flex; flex-wrap: wrap; gap: 8px; }
+.scelta {
+  display: inline-flex; align-items: center; gap: 8px; text-align: left;
+  padding: 8px 14px 8px 8px; border-radius: 14px; cursor: pointer;
+  background: var(--pannello); border: 1px solid var(--bordo); color: var(--testo);
+  transition: border-color .15s, background .15s;
+}
+.scelta:hover { border-color: rgba(209, 254, 23, 0.4); }
+.scelta-segno {
+  display: grid; place-items: center; width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: 7px; border: 1px solid var(--bordo); color: transparent;
+}
+.scelta-testo { display: flex; flex-direction: column; line-height: 1.25; }
+.scelta-testo strong { font-size: 14px; font-weight: 600; }
+.scelta-testo small { font-size: 12px; color: var(--testo-leggero); }
+.scelta.scelta-attiva { background: rgba(209, 254, 23, 0.10); border-color: var(--accento); }
+.scelta.scelta-attiva .scelta-segno { background: var(--accento); border-color: var(--accento); color: var(--testo-su-accento); }
+
+.configura-aggiungi { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding: 12px; border-radius: 16px; border: 1px dashed var(--bordo); }
+.configura-aggiungi > input { flex: 1 1 200px; }
+.configura-aggiungi .campo { flex: 1 1 120px; }
+.configura-aggiungi .campo:first-child { flex: 2 1 180px; }
+.configura-riepilogo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.configura-riepilogo li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--pannello); }
+.configura-riepilogo svg { color: var(--accento); flex-shrink: 0; }
+.spento { opacity: 0.35; pointer-events: none; }
+
+/* editor del budget (Spese e configurazione) */
+.editor-budget { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.editor-budget li { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--pannello); }
+.editor-budget li > span:first-child { flex: 1; min-width: 0; }
+.editor-budget-euro { display: inline-flex; align-items: center; gap: 6px; color: var(--testo-leggero); }
+.editor-budget-euro input { width: 90px; padding: 6px 10px; text-align: right; }
+
+@media (max-width: 600px) {
+  .configura { padding: 0; align-items: stretch; }
+  .configura-box { max-height: none; height: 100%; border-radius: 0; padding: 20px 16px; }
+  .configura-box h2 { font-size: 22px; }
+  .configura-piede { bottom: -20px; }
+}

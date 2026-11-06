@@ -178,7 +178,7 @@ function mostraModuloScontrino(dataUrl, a, avviso) {
   const negozio = h("input", { type: "text", value: a.negozio, placeholder: "es. Esselunga", maxlength: 40 });
   const totale = h("input", { type: "number", min: 0.01, step: 0.01, value: a.totale ?? "", placeholder: "0,00", required: true });
   const data = h("input", { type: "date", value: a.data, required: true });
-  const categoria = h("select", {}, Object.keys(stato.budget.categorie).map((c) => h("option", { value: c, selected: c === "Cibo" }, c)));
+  const categoria = h("select", {}, categorieUscite().map((c) => h("option", { value: c, selected: c === "Cibo" }, c)));
   const spunte = stato.listaSpesa.map((i) => ({ i, box: h("input", { type: "checkbox", checked: a.trovati.includes(i.id) }) }));
 
   apriModale("Nuovo scontrino",
