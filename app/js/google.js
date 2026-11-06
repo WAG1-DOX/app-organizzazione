@@ -85,12 +85,15 @@ async function tokenDalServer() {
 }
 
 // La prima volta: finestra di Google → codice → la funzione lo scambia e tiene il permesso a lungo termine
-async function collegaDalServer() {
+// scopeExtra: permessi in più da chiedere insieme al calendario (es. Gmail, vedi gmail.js).
+// include_granted_scopes: Google tiene anche i permessi dati prima, così nessuno si perde.
+async function collegaDalServer(scopeExtra = "") {
   await caricaScriptGoogle();
   const code = await new Promise((ok, ko) => {
     const client = google.accounts.oauth2.initCodeClient({
       client_id: Google.server.client_id,
-      scope: SCOPE_CALENDARIO,
+      scope: [SCOPE_CALENDARIO, scopeExtra].join(" ").trim(),
+      include_granted_scopes: true,
       ux_mode: "popup",
       select_account: true,
       callback: (r) => (r.error ? ko(new Error(r.error_description || r.error)) : ok(r.code)),
@@ -509,6 +512,7 @@ function scollegaGoogle() {
   stato.promemoria = stato.promemoria.filter((p) => !String(p.id).startsWith("gp-"));
   for (const p of stato.promemoria) { delete p.google_id; delete p.da_inviare; }
   stato.google.promemoriaEliminati = [];
+  if (typeof svuotaPosta === "function") svuotaPosta();   // senza Google niente Gmail
   chiudiModale();
   aggiorna();
 }

@@ -212,7 +212,9 @@ function apriDettaglioMovimento(m) {
       h("dt", {}, "Giorno"), h("dd", {}, maiuscola(dataLunga(daChiave(m.data)))),
       (m.banca || m.conto) && [h("dt", {}, "Conto"), h("dd", {}, [m.banca, m.conto_chiave ? nomeConto(m.conto_chiave, m.conto) : m.conto].filter(Boolean).join(" · "))],
       h("dt", {}, "Da dove"), h("dd", {}, m.fonte === "banca" ? "Dalla banca (Enable Banking)" : m.fonte === "csv" ? "Dall'estratto conto (CSV)" : "Scritto a mano"),
-      m.originale && m.originale !== m.descrizione && [h("dt", {}, "Testo della banca"), h("dd", { class: "testo-originale" }, m.originale)]),
+      m.originale && m.originale !== m.descrizione && [h("dt", {}, "Testo della banca"), h("dd", { class: "testo-originale" }, m.originale)],
+      // ricevuta trovata nelle mail (gmail.js → collegaRicevute)
+      m.ricevuta && [h("dt", {}, "Ricevuta"), h("dd", {}, h("a", { href: typeof linkGmail === "function" ? linkGmail(m.ricevuta.thread) : "#", target: "_blank", rel: "noopener" }, `${m.ricevuta.da}: ${m.ricevuta.oggetto}`))]),
     h("div", { class: "modulo" },
       campo("Nome", nome),
       campo("Categoria", scelta),

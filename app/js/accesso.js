@@ -68,6 +68,7 @@ async function avviaAccesso(quandoDentro) {
 
 async function esci() {
   if (!confirm("Vuoi uscire dal tuo account?")) return;
+  if (typeof svuotaPosta === "function") svuotaPosta();   // le mail restano solo nel browser: via
   if (sb) await sb.auth.signOut();
   location.hash = "";
   location.reload();

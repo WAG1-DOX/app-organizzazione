@@ -477,6 +477,7 @@ const ICONE = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 8l9 6 9-6"/>',
   piu: '<path d="M12 5v14M5 12h14"/>',
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  archivio: '<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   sinistra: '<path d="M15 5l-7 7 7 7"/>',
   destra: '<path d="M9 5l7 7-7 7"/>',

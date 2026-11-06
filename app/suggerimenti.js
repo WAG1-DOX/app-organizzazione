@@ -81,4 +81,7 @@ const categorieEntrate = ["Paghetta", "Lavoretti", "Regali", "Altro"];
 const regoleMailIniziali = {
   mittenti: [],
   parole: ["scadenza", "pagamento", "esame", "midterm", "deadline", "verifica"],
+  mai: [],          // mai in Importanti (vedi js/gmail.js)
+  silenziati: [],   // le loro mail vanno in archivio da sole
+  scadenzeViste: [], // scadenze già trasformate in promemoria o ignorate ("idMail|giorno")
 };

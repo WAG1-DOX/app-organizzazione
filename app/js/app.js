@@ -211,6 +211,7 @@ avviaAccesso(async () => {
   caricaSocial().then(ridisegnaChat);
   // Google Calendar: se eri già collegato (funzione "google" su Supabase), si ricollega da solo
   if (typeof avviaGoogleAutomatico === "function") avviaGoogleAutomatico().catch(() => {});
+  if (typeof avviaPosta === "function") avviaPosta();   // Check-up mail (gmail.js)
 });
 
 // Se Google Calendar è già stato configurato, prepariamo subito il suo script

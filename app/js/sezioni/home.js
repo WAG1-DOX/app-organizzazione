@@ -81,7 +81,7 @@ Viste.home = function (box) {
     h("p", { class: "testo-leggero piccolo" }, `Serie attuale: ${mese.serie} giorni · record del mese: ${mese.serieMax}`));
 
   box.append(h("div", { class: "griglia-home" },
-    h("div", { class: "colonna" }, giornata, luce),
+    h("div", { class: "colonna" }, giornata, luce, typeof cartaMailHome === "function" && cartaMailHome()),
     agenda,
     tessere,
     grafico,

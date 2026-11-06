@@ -1808,3 +1808,78 @@ body.chat-aperta { overflow: hidden; }
 /* la casella della chat non prende lo stile generale dei campi dell'app */
 .chat-pillola .chat-input { background: transparent; border: 0; box-shadow: none; border-radius: 0; min-height: 0; height: 44px; padding: 11px 0; margin: 0; width: auto; }
 .chat-pillola .chat-input:focus { box-shadow: none; border: 0; outline: 0; }
+
+/* ===== Check-up mail 2.0 (js/gmail.js + js/sezioni/mail.js) ===== */
+.numeri-mail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tessera-mail { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 16px; border-radius: 18px;
+  background: var(--pannello); border: 1px solid var(--bordo); color: var(--testo); text-align: left; cursor: pointer; min-width: 0; }
+.tessera-mail strong { font-size: 26px; line-height: 1.1; }
+.tessera-mail span { font-size: 14px; font-weight: 600; }
+.tessera-mail small { color: var(--testo-leggero); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.tessera-mail:hover { background: var(--pannello-forte); }
+.tessera-mail.attiva { border-color: var(--accento-bordo); box-shadow: inset 0 0 0 1px var(--accento-bordo); }
+.tessera-mail.calda strong { color: var(--accento); }
+.barra-annulla { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin-bottom: 12px;
+  border-radius: 14px; background: var(--accento-tenue); border: 1px solid var(--accento-bordo); color: var(--accento); }
+.filtri-mail { margin-bottom: 6px; }
+.filtri-mail input { width: 100%; }
+.riga-mail { align-items: flex-start; }
+.riga-mail .avatar { margin-top: 4px; }
+.riga-cliccabile { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; background: none; border: none; padding: 0; color: inherit; text-align: left; cursor: pointer; }
+.mail-testa { display: flex; justify-content: space-between; gap: 8px; }
+.mail-testa strong { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mail-oggetto { font-size: 14px; color: var(--testo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mail-anteprima { color: var(--testo-leggero); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.riga-mail.non-letta .mail-testa strong, .riga-mail.non-letta .mail-oggetto { font-weight: 700; }
+.riga-mail.non-letta .avatar { box-shadow: 0 0 0 2px var(--accento-bordo); }
+.riga-mail .gruppo-pill { margin-top: 3px; }
+.riga-mail .pill.piccola { font-size: 11px; padding: 2px 8px; display: inline-flex; gap: 4px; align-items: center; }
+.pill.motivo-forte { color: var(--accento); border-color: var(--accento-bordo); }
+.pill.motivo-debole { opacity: 0.7; }
+.mail-azioni { display: flex; flex-direction: column; gap: 2px; }
+.mail-azioni .icona-tonda.fantasma:hover { color: var(--accento); background: var(--accento-tenue); }
+.mail-anteprima-grande { background: var(--pannello-forte); border-radius: 14px; padding: 12px 14px; margin: 10px 0; line-height: 1.5; }
+.perche-mail { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.perche-mail strong { font-size: 14px; }
+.azioni-modale.sinistra { justify-content: flex-start; }
+.azioni-modale.a-capo { margin-top: 12px; }
+.insegna-mail { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bordo); }
+.elenco-spiegato { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; line-height: 1.45; }
+.elenco-scadenze, .scadenze-mail { display: flex; flex-direction: column; gap: 10px; }
+.riga-scadenza { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px;
+  border-radius: 14px; background: var(--pannello-forte); border: 1px solid var(--bordo); }
+.riga-scadenza.vicina { border-color: var(--accento-bordo); }
+.scadenza-data { display: flex; flex-direction: column; }
+.scadenza-data strong { font-size: 14px; }
+.riga-scadenza.vicina .scadenza-data strong { color: var(--accento); }
+.scadenza-data small { color: var(--testo-leggero); font-size: 12px; }
+.scadenza-corpo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.scadenza-corpo input { padding: 6px 10px; font-size: 14px; }
+.scadenza-corpo small { font-size: 12px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.scadenza-azioni { display: flex; align-items: center; gap: 4px; }
+.lista-newsletter, .lista-ricevute { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; }
+.lista-newsletter li, .lista-ricevute li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--bordo); }
+.lista-newsletter li:last-child, .lista-ricevute li:last-child { border-bottom: none; }
+.lista-newsletter .riga-testo, .lista-ricevute .riga-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lista-newsletter strong, .lista-ricevute strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.barra-aperte { display: block; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.barra-aperte i { display: block; height: 100%; background: var(--accento); }
+.newsletter-azioni { display: flex; gap: 6px; flex-shrink: 0; }
+.dettagli-regole summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.dettagli-regole summary::-webkit-details-marker { display: none; }
+.dettagli-regole summary h3 { margin: 0; }
+.rimanda { margin: 12px 0; }
+.card-mail-home .riassunto-mail { margin: 0 0 8px; color: var(--testo-leggero); }
+.card-mail-home .riassunto-mail b { color: var(--testo); font-size: 18px; }
+.riga-home-mail { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--bordo); color: var(--testo); text-decoration: none; font-size: 14px; min-width: 0; }
+.riga-home-mail span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--testo-leggero); }
+.riga-home-mail strong { flex-shrink: 0; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.riga-home-mail.scadenza { color: var(--accento); }
+.riga-home-mail.scadenza span { color: var(--accento); }
+@media (max-width: 760px) {
+  .numeri-mail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .tessera-mail { padding: 12px; }
+  .tessera-mail strong { font-size: 22px; }
+  .riga-scadenza { grid-template-columns: minmax(0, 1fr) auto; }
+  .riga-scadenza .scadenza-data { grid-column: 1 / -1; flex-direction: row; gap: 8px; align-items: baseline; }
+}
