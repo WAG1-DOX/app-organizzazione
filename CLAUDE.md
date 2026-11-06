@@ -193,6 +193,9 @@ Esempio di evento come arriverà all'app (usare questa forma per tutti gli event
 - Le mail **non** vanno su Supabase: cache solo nel browser (`organizza-posta`), svuotata all'uscita.
   Su Supabase solo le regole (chiave `regole_mail`: `mittenti`, `parole`, `mai`, `silenziati`, `scadenzeViste`).
   Promemoria creati da una mail hanno `da_mail` (id della mail).
+- Mail della scuola: Luca ha l'**inoltro automatico** da luca.deodati@student.h-farm.com alla Gmail personale.
+  L'app riconosce le mail inoltrate (intestazione `X-Forwarded-For`, o destinatario @h-farm) → `m.conto = "H-FARM"`;
+  in alto il filtro Tutte / Personale / H-FARM. Arrivano solo le mail nuove (da quando l'inoltro è attivo).
 
 ## Salvataggio su Supabase (`app/js/sincronizza.js`)
 - Il browser tiene una copia (localStorage); dopo il login comandano i dati del database.

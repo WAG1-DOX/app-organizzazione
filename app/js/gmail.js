@@ -40,6 +40,7 @@ const Posta = {
   inCorso: false,
   annulla: null,     // { testo, ids, aggiungi, scade }
   filtro: "importanti",
+  conto: "tutti",    // "tutti" | "personale" | nome di un account inoltrato (es. "H-FARM")
   cerca: "",
   timer: null,
 };
@@ -138,7 +139,26 @@ async function idDaRicerca(q, max) {
   return ids;
 }
 
-const INTESTAZIONI = ["From", "To", "Cc", "Subject", "Date", "List-Unsubscribe", "List-Unsubscribe-Post", "List-Id", "Precedence", "Auto-Submitted", "Reply-To"];
+const INTESTAZIONI = ["From", "To", "Cc", "Subject", "Date", "List-Unsubscribe", "List-Unsubscribe-Post", "List-Id", "Precedence", "Auto-Submitted", "Reply-To", "X-Forwarded-For", "X-Forwarded-To"];
+const VERSIONE_MAIL = 2;   // se cambia, le intestazioni delle mail si rileggono
+
+// ---------- Da quale account arriva (inoltro automatico, es. la mail della scuola) ----------
+// Gmail, quando inoltra, aggiunge "X-Forwarded-For: account-originale tuo-indirizzo".
+// Se manca, guardiamo i destinatari: un indirizzo della scuola tra i "A:" basta.
+function nomeConto(email) {
+  const dominio = dominioDi(email);
+  if (/h-?farm/i.test(dominio)) return "H-FARM";
+  const base = dominio.split(".").filter((p) => !/^(student|students|studenti|mail|email|my|stud)$/i.test(p)).slice(-2, -1)[0] || dominio;
+  return base.toUpperCase();
+}
+function contoDi(g, a) {
+  const inoltro = indirizziDi(intestazione(g, "X-Forwarded-For").replace(/\s+/g, ","))
+    .find((e) => !Posta.email || e !== Posta.email);
+  if (inoltro) return { conto: nomeConto(inoltro), contoEmail: inoltro };
+  const scuola = a.find((e) => /h-?farm/i.test(dominioDi(e)));
+  if (scuola) return { conto: nomeConto(scuola), contoEmail: scuola };
+  return { conto: "personale", contoEmail: Posta.email || null };
+}
 async function leggiIntestazioni(id, quali = INTESTAZIONI) {
   const p = new URLSearchParams({ format: "metadata" });
   for (const q of quali) p.append("metadataHeaders", q);
@@ -160,10 +180,13 @@ const dominioDi = (email) => (email.split("@")[1] || "");
 function mailDaGmail(g) {
   const da = leggiIndirizzo(intestazione(g, "From"));
   const disiscrivi = intestazione(g, "List-Unsubscribe");
+  const a = indirizziDi(`${intestazione(g, "To")},${intestazione(g, "Cc")}`);
   return {
+    v: VERSIONE_MAIL,
+    ...contoDi(g, a),
     id: g.id, thread: g.threadId,
     da: da.nome, email: da.email,
-    a: indirizziDi(`${intestazione(g, "To")},${intestazione(g, "Cc")}`),
+    a,
     oggetto: (intestazione(g, "Subject") || "(senza oggetto)").trim(),
     anteprima: testoDaHtml(g.snippet || ""),
     data: Number(g.internalDate) || Date.parse(intestazione(g, "Date")) || Date.now(),
@@ -224,7 +247,7 @@ async function aggiornaPosta(forza = false) {
       idDaRicerca(`in:inbox is:unread newer_than:${GIORNI_INBOX}d`, MAX_INBOX),
     ]);
     const note = new Map(Posta.mail.map((m) => [m.id, m]));
-    const nuove = idInbox.filter((id) => !note.has(id));
+    const nuove = idInbox.filter((id) => !note.has(id) || note.get(id).v !== VERSIONE_MAIL);
     const lette = await aPiccoliGruppi(nuove, 8, leggiIntestazioni);
     for (const g of lette) if (g) note.set(g.id, mailDaGmail(g));
     const nonLette = new Set(idNonLette);
@@ -333,12 +356,15 @@ function calcolaSmista(m) {
     motivi.push({ t: `Scadenza ${dataBreve(daChiave(scadenze[0].data))}`, tono: "forte" });
   }
   if (SCUOLA_MAIL.test(m.email) || SCUOLA_MAIL.test(m.da)) { punti += 3; motivi.push({ t: "Scuola", tono: "medio" }); }
+  else if (m.conto && m.conto !== "personale" && !m.massa) { punti += 2; motivi.push({ t: `Account ${m.conto}`, tono: "medio" }); }
   if (e.has("IMPORTANT")) { punti += 2; motivi.push({ t: "Gmail la ritiene importante", tono: "medio" }); }
   if (e.has("CATEGORY_PERSONAL") && !m.massa && !m.automatica) { punti += 2; motivi.push({ t: "Scritta da una persona", tono: "medio" }); }
   if (Posta.email && m.a.includes(Posta.email) && m.a.length <= 3 && !m.massa) punti += 1;
 
   if (m.massa) { punti -= 3; motivi.push({ t: "Newsletter / posta di massa", tono: "debole" }); }
-  if (m.automatica) { punti -= 2; motivi.push({ t: "Automatica (no-reply)", tono: "debole" }); }
+  // le notifiche automatiche della scuola (Canvas, segreteria) contano: niente penalità
+  const daScuola = SCUOLA_MAIL.test(m.email) || SCUOLA_MAIL.test(m.da) || (m.conto && m.conto !== "personale");
+  if (m.automatica && !daScuola) { punti -= 2; motivi.push({ t: "Automatica (no-reply)", tono: "debole" }); }
   if (e.has("CATEGORY_PROMOTIONS")) { punti -= 4; motivi.push({ t: "Promozione", tono: "debole" }); }
   if (e.has("CATEGORY_SOCIAL")) { punti -= 3; motivi.push({ t: "Social", tono: "debole" }); }
   if (e.has("CATEGORY_FORUMS")) { punti -= 2; motivi.push({ t: "Gruppi / forum", tono: "debole" }); }
@@ -359,9 +385,18 @@ function calcolaSmista(m) {
   return { gruppo, punti, motivi };
 }
 
-function gruppiPosta() {
+// gli account da cui arrivano le mail (personale + quelli inoltrati), per il filtro in alto
+function contiPosta() {
+  const conti = new Map();
+  for (const m of Posta.mail) conti.set(m.conto || "personale", (conti.get(m.conto || "personale") || 0) + 1);
+  return conti;
+}
+const nelConto = (m) => Posta.conto === "tutti" || (m.conto || "personale") === Posta.conto;
+
+function gruppiPosta(tutti = false) {
   const g = { importanti: [], leggere: [], rumore: [] };
   for (const m of Posta.mail) {
+    if (!tutti && !nelConto(m)) continue;
     const s = smista(m);
     // "Da leggere" = solo le non lette; quelle già lette che non contano non disturbano
     if (s.gruppo === "leggere" && !m.etichette.includes("UNREAD")) continue;
@@ -545,11 +580,12 @@ const scadenzeDi = (m) => ((Posta.analisi[m.id] && Posta.analisi[m.id].scadenze)
 const chiaveScadenza = (m, s) => `${m.id}|${s.data}`;
 
 // Le scadenze ancora da decidere (non create, non ignorate, non passate), dalla più vicina
-function scadenzeDaDecidere() {
+function scadenzeDaDecidere(tutti = false) {
   const viste = new Set(regole().scadenzeViste);
   const giaPromemoria = new Set(stato.promemoria.filter((p) => p.da_mail).map((p) => `${p.da_mail}|${p.scadenza}`));
   const out = [];
   for (const m of Posta.mail) {
+    if (!tutti && !nelConto(m)) continue;
     if (smista(m).gruppo === "rumore") continue;
     for (const s of scadenzeDi(m)) {
       const k = chiaveScadenza(m, s);

@@ -1894,3 +1894,9 @@ body.chat-aperta { overflow: hidden; }
   .tessera-mail { padding: 12px; }
   .tessera-mail strong { font-size: 22px; }
 }
+
+/* account delle mail (personale / H-FARM inoltrata) */
+.conti-mail { margin-bottom: 12px; }
+.conti-mail button small { opacity: 0.6; }
+.mail-testa-destra { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.pill.conto-pill { color: #8ab4f8; border-color: rgba(138, 180, 248, 0.4); font-size: 10px; padding: 1px 7px; }

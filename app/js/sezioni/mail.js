@@ -21,6 +21,15 @@ Viste.mail = function (box) {
 
   if (!Posta.mail.length && Posta.stato !== "pronto") return box.append(schermataCollegamento());
 
+  // se arrivano mail da più account (es. quella della scuola inoltrata), filtro in alto
+  const conti = contiPosta();
+  if (Posta.conto !== "tutti" && !conti.has(Posta.conto)) Posta.conto = "tutti";
+  const sceltaConto = conti.size > 1 && h("div", { class: "segmenti conti-mail" },
+    [["tutti", "Tutte", Posta.mail.length], ...[...conti.entries()].sort((a, b) => (a[0] === "personale" ? -1 : b[0] === "personale" ? 1 : a[0].localeCompare(b[0])))
+      .map(([k, n]) => [k, k === "personale" ? "Personale" : k, n])].map(([k, nome, n]) =>
+      h("button", { type: "button", class: Posta.conto === k ? "attivo" : "", onclick: () => { Posta.conto = k; ridisegnaFermo(); } },
+        nome, h("small", {}, ` ${n}`))));
+
   const g = gruppiPosta();
   const scadenze = scadenzeDaDecidere();
   const ricevute = ricevuteTrovate();
@@ -53,6 +62,7 @@ Viste.mail = function (box) {
     Posta.annulla && h("div", { class: "barra-annulla" },
       h("span", {}, Posta.annulla.testo),
       h("button", { type: "button", class: "bottone-secondario", onclick: () => azionePosta(annullaArchiviazione) }, "Annulla")),
+    sceltaConto,
     numeri,
     h("div", { class: "griglia-due larga-sinistra" }, elenco, colonna)].filter(Boolean));
 };
@@ -60,8 +70,8 @@ Viste.mail = function (box) {
 // ---------- Riepilogo in Home ----------
 function cartaMailHome() {
   if (!Posta.mail.length) return null;
-  const g = gruppiPosta();
-  const scadenze = scadenzeDaDecidere();
+  const g = gruppiPosta(true);
+  const scadenze = scadenzeDaDecidere(true);
   const prime = g.importanti.filter((m) => m.etichette.includes("UNREAD")).slice(0, 3);
   return pannello("card-mail-home", "Mail", h("a", { class: "pill", href: "#mail" }, "Apri"),
     h("p", { class: "riassunto-mail" },
@@ -144,7 +154,11 @@ function rigaMail(m) {
   return h("li", { class: `riga-mail${nonLetta ? " non-letta" : ""}${s.gruppo === "importanti" ? " importante" : ""}` },
     h("span", { class: "avatar piccolo" }, iniziale),
     h("button", { type: "button", class: "riga-testo riga-cliccabile", onclick: () => apriMail(m) },
-      h("span", { class: "mail-testa" }, h("strong", {}, m.da || m.email), h("small", { class: "testo-leggero" }, quando(m.data))),
+      h("span", { class: "mail-testa" },
+        h("strong", {}, m.da || m.email),
+        h("span", { class: "mail-testa-destra" },
+          Posta.conto === "tutti" && m.conto && m.conto !== "personale" && h("span", { class: "pill piccola conto-pill" }, m.conto),
+          h("small", { class: "testo-leggero" }, quando(m.data)))),
       h("span", { class: "mail-oggetto" }, m.oggetto),
       h("small", { class: "mail-anteprima" }, m.anteprima),
       (mostraMotivi.length > 0 || !!scad) && h("span", { class: "gruppo-pill" },
@@ -172,6 +186,7 @@ function apriMail(m) {
   } }, testo);
 
   apriModale(m.oggetto,
+    m.conto && m.conto !== "personale" && h("p", { class: "testo-leggero" }, `Arrivata su ${m.contoEmail || m.conto} (inoltrata)`),
     h("p", { class: "testo-leggero" }, `${m.da} · ${m.email} · ${new Date(m.data).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`),
     h("p", { class: "mail-anteprima-grande" }, m.anteprima || "(nessuna anteprima)"),
     h("div", { class: "perche-mail" },
