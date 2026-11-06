@@ -34,8 +34,12 @@ dati simulati. Ho cambiato **solo cose sicuramente sbagliate** e ho preparato de
 | 5 | **Il file vecchio rimasto in memoria rompeva il login** | Il piccolo server che usiamo fa tenere a Chrome i file vecchi: un file nuovo più uno vecchio insieme facevano fallire l'accesso | Il codice ora regge anche questo caso. **Vedi 4.2: ricarica con Cmd + Shift + R** |
 | 6 | **Due difetti grafici sul telefono** | Il bottone "Nuovo obiettivo" usciva dal riquadro; nel calendario le parole si spezzavano a metà ("Principl-es") | Sistemati |
 
-In più ho aggiunto l'**icona dell'app** (`icona.svg`) e il **manifest**
-(`manifest.json`): il primo pezzo per installarla sul telefono come una vera app (PWA).
+Icona e manifest per installarla sul telefono: ora si usano quelli di Edoardo
+(`img/` e `manifest.webmanifest`, nome **XECUTE**); i miei `icona.svg` e `manifest.json` sono stati tolti.
+
+**Aggiunto il 6 novembre:** i **promemoria** si collegano a un calendario Google chiamato
+esattamente «Promemoria» (nei due sensi). Così un promemoria aggiunto dal telefono o da
+Claude compare nell'app. Codice in `js/google.js` (sezione "Promemoria ↔ calendario").
 
 Tutto **riprovato dopo le correzioni**, con prove automatiche: posizione del
 calendario mantenuta (308 → 308), l'account B non vede i dati dell'account A e A li
@@ -48,19 +52,11 @@ nessuna chiave segreta.
 
 Si accendono in `app/js/config.js`, cambiando `false` in `true`.
 
-### 3.1 Salvataggio nel database — `SUPABASE_DATI_ATTIVI` (file `js/dati-supabase.js`)
-**Cosa fa quando è acceso:**
-- al login scarica i tuoi dati da Supabase; se il database è ancora vuoto, ci carica
-  sopra quello che hai nel browser, così non perdi niente;
-- gli **eventi** creati nell'app vanno nella tabella `eventi` di Edoardo, **in tempo
-  reale**: se Edoardo crea un evento in un gruppo comune, ti compare subito;
-- **tutto il resto** (spese, giornata, obiettivi, sonno…) va in `dati_personali`, una
-  riga per sezione, e viene mandato 1,5 secondi dopo ogni modifica, solo se è cambiato;
-- così hai **gli stessi dati su ogni dispositivo** e **non li perdi più** se svuoti il browser.
-
-**Quando accenderlo:** solo dopo che Edoardo ha eseguito il codice SQL in cima a
-`app/tabelle-nuove.md`. La prima volta **va provato insieme**, perché il codice è
-scritto ma non ancora provato con il database vero.
+### 3.1 Salvataggio nel database — FATTO DA EDOARDO (`js/sincronizza.js`)
+Il mio innesto `dati-supabase.js` è stato **tolto** il 6 novembre: Edoardo ha scritto
+`sincronizza.js`, che fa la stessa cosa ed è già acceso e provato. Tenerli tutti e due
+avrebbe bloccato l'app (stessi nomi dichiarati due volte). Anche la separazione dei dati
+tra account ora la fa `sincronizza.js` (correzione 4 sopra).
 
 ### 3.2 Notifiche sul Mac — `NOTIFICHE_ATTIVE` (file `js/notifiche.js`)
 Con l'app aperta in Chrome, anche se usi un'altra finestra, avvisa:

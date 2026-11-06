@@ -440,7 +440,7 @@ function apriPannelloGoogle() {
     apriModale("Collega Google Calendar",
       h("p", { class: "testo-leggero" }, "Serve una volta sola: crei un \"Client ID\" gratuito su Google e lo incolli qui. Non è una chiave segreta."),
       h("ol", { class: "passi" },
-        h("li", {}, "Vai su console.cloud.google.com e crea un progetto (es. \"Organizza\")."),
+        h("li", {}, "Vai su console.cloud.google.com e crea un progetto (es. \"Xecute\")."),
         h("li", {}, "Menu → API e servizi → Libreria: cerca \"Google Calendar API\" e premi Abilita."),
         h("li", {}, "Schermata consenso OAuth: tipo Esterno, poi in \"Utenti di prova\" aggiungi la tua email e quella di Edoardo."),
         h("li", {}, "Credenziali → Crea credenziali → ID client OAuth → Applicazione web."),

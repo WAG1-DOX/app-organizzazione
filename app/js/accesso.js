@@ -45,9 +45,7 @@ async function avviaAccesso(quandoDentro) {
     // Supabase a volte ripete "sei dentro" (es. quando torni sulla scheda): se sei sempre tu, non ridisegniamo
     if (entrato && utenteSupabase && utenteSupabase.id === user.id) return;
     if (entrato && utenteSupabase && utenteSupabase.id !== user.id) { location.reload(); return; }
-    usaDatiDiUtente(user.id);
     await impostaUtente(user);
-    if (typeof avviaDatabase === "function") await avviaDatabase();      // innesto: spento finché SUPABASE_DATI_ATTIVI = false
     if (typeof avviaNotifiche === "function") avviaNotifiche();          // innesto: spento finché NOTIFICHE_ATTIVE = false
     document.body.classList.remove("fuori");
     nascondiAccesso();
@@ -136,7 +134,7 @@ function mostraAccesso(errore, quandoDentro) {
 
   const schermata = h("div", { class: "accesso", id: "accesso" },
     h("div", { class: "accesso-box" },
-      h("div", { class: "logo accesso-logo" }, h("span", { class: "logo-segno" }, "◆"), " Organizza"),
+      h("img", { class: "accesso-copertina", src: "img/logo-grande.jpg", alt: "XECUTE" }),
       h("h2", {}, modoAccesso === "accedi" ? "Bentornato" : modoAccesso === "registrati" ? "Crea il tuo account" : "Password dimenticata"),
       h("p", { class: "testo-leggero" }, modoAccesso === "recupero"
         ? "Scrivi la tua email: ti mandiamo un link per scegliere una nuova password."

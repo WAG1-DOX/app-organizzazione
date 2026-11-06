@@ -146,31 +146,11 @@ function caricaStato() {
 
 const stato = caricaStato();
 
+// Salva nel browser (copia veloce, funziona anche senza internet)
+// e, se hai fatto il login, manda le modifiche anche a Supabase (vedi sincronizza.js).
 function salva() {
   try { localStorage.setItem(CHIAVE_SALVATAGGIO, JSON.stringify(stato)); } catch (e) { /* il browser non salva: pazienza */ }
-  if (typeof programmaInvio === "function") programmaInvio();   // innesto database (spento finché non si accende)
-}
-
-// Ogni account ha i suoi dati anche se usate lo stesso browser:
-// al login, se l'ultimo ad aver usato l'app era un altro account, mettiamo da parte i suoi dati
-// e carichiamo quelli di chi è appena entrato (o si parte da zero).
-const CHIAVE_PROPRIETARIO = "organizza-proprietario";
-function usaDatiDiUtente(id) {
-  let proprietario = null;
-  try { proprietario = localStorage.getItem(CHIAVE_PROPRIETARIO); } catch (e) { return; }
-  if (proprietario === id) return;
-  try {
-    if (proprietario) {
-      localStorage.setItem(`${CHIAVE_SALVATAGGIO}-${proprietario}`, JSON.stringify(stato));
-      const suoi = JSON.parse(localStorage.getItem(`${CHIAVE_SALVATAGGIO}-${id}`) || "null");
-      const nuovo = suoi ? { ...statoIniziale(), ...suoi } : statoIniziale();
-      for (const k of Object.keys(stato)) delete stato[k];
-      Object.assign(stato, nuovo);
-    }
-    // il primo account che entra si tiene i dati che c'erano già
-    localStorage.setItem(CHIAVE_PROPRIETARIO, id);
-    salva();
-  } catch (e) { /* il browser non salva: pazienza */ }
+  if (typeof programmaInvio === "function") programmaInvio();
 }
 
 function ricominciaDaCapo() {

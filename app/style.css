@@ -87,7 +87,8 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 }
 
 .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; padding: 0 10px; display: flex; gap: 10px; align-items: center; }
-.logo-segno { color: var(--accento); font-size: 18px; }
+.logo-segno { width: 30px; height: 30px; display: block; flex-shrink: 0; }
+.logo-nome { font-style: italic; font-weight: 800; letter-spacing: 0.04em; color: #c6f31a; }
 
 .menu { display: flex; flex-direction: column; gap: 4px; }
 
@@ -838,7 +839,10 @@ select option { background: #18181b; }
 
   .principale { padding: 18px 16px 110px; }
   .barra-alta h1 { font-size: 24px; }
-  .chiedi, .profilo-testo { display: none; }
+  .profilo-testo { display: none; }
+  /* sul telefono l'assistente diventa un bottone rotondo con la scintilla */
+  .chiedi { width: 44px; height: 44px; padding: 0; justify-content: center; }
+  .chiedi-testo { display: none; }
   .griglia-home { grid-template-columns: minmax(0, 1fr); }
   .griglia-home .card-grafico, .griglia-home .card-striscia { grid-column: auto; }
   .griglia-lezioni > .colonna { grid-template-columns: minmax(0, 1fr); }
@@ -1453,6 +1457,14 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
   border: 1px solid var(--bordo); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .accesso-logo { padding: 0; font-size: 18px; }
+/* logo grande in cima alla scatola di login, da bordo a bordo, che sfuma in basso */
+.accesso-copertina {
+  display: block; width: calc(100% + 56px); margin: -30px -28px 0;
+  aspect-ratio: 1200 / 670; object-fit: cover;
+  border-radius: 26px 26px 0 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent);
+  mask-image: linear-gradient(to bottom, #000 75%, transparent);
+}
 .accesso-box h2 { margin: 6px 0 0; font-size: 26px; letter-spacing: -0.02em; }
 .accesso-schede { align-self: stretch; }
 .accesso-schede button { flex: 1; }
@@ -1460,6 +1472,69 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
 .accesso-messaggio.errore { color: var(--rosso); }
 .accesso-messaggio.ok { color: var(--verde); }
 .accesso-link { align-self: center; border: none; background: none; margin-top: 0; }
+
+/* ===== Salvataggio su Supabase (in alto, sotto l'email) ===== */
+.profilo-testo .stato-cloud { font-size: 11px; color: var(--testo-tenue); }
+.profilo-testo .stato-cloud:empty { display: none; }
+.profilo-testo .stato-cloud.ok { color: var(--verde); }
+.profilo-testo .stato-cloud.errore { color: var(--rosso); }
+
+/* ===== Assistente ===== */
+.assistente-risposta { white-space: pre-wrap; line-height: 1.55; font-size: 14px; margin-top: 14px; max-height: 50vh; overflow-y: auto; }
+.assistente-risposta:empty { display: none; }
+.assistente-risposta.caricamento { color: var(--testo-leggero); }
+.assistente-risposta.errore { color: var(--rosso); }
+
+/* ===== Chat e gruppi ===== */
+.pallino-menu { position: static; margin-left: auto; }
+.chat-pannello { display: flex; flex-direction: column; }
+.chat-messaggi {
+  display: flex; flex-direction: column; gap: 6px;
+  height: min(60vh, 560px); overflow-y: auto;
+  padding: 4px 2px 10px;
+}
+.chat-giorno { align-self: center; font-size: 11px; color: var(--testo-tenue); margin: 10px 0 4px; }
+.chat-fumetto {
+  align-self: flex-start; max-width: 78%;
+  padding: 8px 12px; border-radius: 16px 16px 16px 4px;
+  background: var(--pannello-forte); border: 1px solid var(--bordo);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.chat-fumetto.mio {
+  align-self: flex-end; border-radius: 16px 16px 4px 16px;
+  background: var(--accento); color: var(--testo-su-accento); border-color: transparent;
+}
+.chat-testo { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.4; font-size: 14px; }
+.chat-fumetto small { font-size: 10px; opacity: 0.65; align-self: flex-end; }
+.chat-scrivi { display: flex; gap: 8px; margin-top: 10px; }
+.chat-scrivi input { flex: 1; min-width: 0; }
+.chat-scrivi button { flex-shrink: 0; padding: 0 16px; }
+.chat-errore { margin: 6px 0 0; font-size: 13px; color: var(--rosso); min-height: 0; }
+.chat-errore:empty { display: none; }
+
+.chat-contatti, .chat-gruppi { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.chat-contatto {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 14px; text-align: left;
+  background: none; border: 1px solid transparent; color: var(--testo);
+}
+.chat-contatto:hover { background: var(--pannello); }
+.chat-contatto.attivo { background: var(--pannello-forte); border-color: var(--bordo); }
+.chat-contatto-testo { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.chat-contatto-testo small { color: var(--testo-leggero); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-non-letti { position: static; }
+
+.chat-gruppo { padding: 10px 12px; border-radius: 14px; border: 1px solid var(--bordo); display: flex; flex-direction: column; gap: 4px; }
+.chat-gruppo-testa { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chat-codice { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--testo-leggero); }
+.chat-codice strong { color: var(--accento); letter-spacing: 0.12em; font-size: 14px; }
+.testo-leggero.piccolo { font-size: 12px; margin: 10px 0 4px; }
+
+@media (max-width: 860px) {
+  .chat-messaggi { height: 55vh; }
+  .chat-fumetto { max-width: 88%; }
+}
+.chat-gruppo .link-sottile { margin-top: 0; background: none; border: none; padding: 0; cursor: pointer; }
 
 /* ritocchi dalla revisione */
 .azioni-obiettivi .bottone-accento, .azioni-obiettivi .bottone-secondario { white-space: normal; text-align: center; line-height: 1.2; }

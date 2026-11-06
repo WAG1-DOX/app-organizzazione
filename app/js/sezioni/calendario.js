@@ -306,7 +306,7 @@ function apriModificaEvento(e, preset = {}) {
   const tipo = h("select", {}, Object.entries(ETICHETTE_TIPO).map(([v, n]) => h("option", { value: v, selected: (e ? e.tipo : preset.tipo || "impegno") === v }, n)));
   const visibile = h("select", {},
     h("option", { value: "" }, "Solo a me"),
-    gruppiFinti.map((g) => h("option", { value: g.id, selected: e && e.gruppo_id === g.id }, `Gruppo ${g.nome}`)));
+    gruppiDisponibili().map((g) => h("option", { value: g.id, selected: e && e.gruppo_id === g.id }, `Gruppo ${g.nome}`)));
   const luogo = h("input", { type: "text", value: e ? e.luogo || "" : "", placeholder: "Aggiungi un luogo", maxlength: 200 });
   let coloreScelto = e ? e.colore_scelto || null : null;
   const colori = sceltaColore(coloreScelto, (hex) => { coloreScelto = hex; });
