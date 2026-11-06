@@ -42,7 +42,7 @@ function chiavePubblica(): string {
 }
 
 // Istruzioni fisse per Claude (sempre uguali: così si possono riusare in cache).
-const ISTRUZIONI = `Sei l'assistente di "XECUTE", un'app personale per organizzare scuola, allenamenti e impegni.
+const ISTRUZIONI = `Sei l'assistente di "X-ECUTE", un'app personale per organizzare scuola, allenamenti e impegni.
 Parli in italiano, in modo semplice, amichevole e breve.
 Ricevi gli eventi dell'utente dei prossimi giorni e una sua richiesta.
 Regole:

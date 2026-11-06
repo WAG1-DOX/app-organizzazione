@@ -71,7 +71,7 @@ function apriConfigurazione() {
   // ---------- I passi ----------
   const passi = [
     {
-      titolo: giaFatta ? "Rifacciamo la configurazione" : "Benvenuto in XECUTE",
+      titolo: giaFatta ? "Rifacciamo la configurazione" : "Benvenuto in X-ECUTE",
       testo: giaFatta
         ? "Ritrovi già scelto quello che hai. Cambia quello che vuoi: niente si salva finché non arrivi alla fine."
         : "Configuriamo l'app insieme: ci vogliono 2 minuti. Ti propongo delle idee, tu tocchi quelle che ti servono. Tutto si può cambiare anche dopo.",

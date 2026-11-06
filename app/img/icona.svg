@@ -1,9 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Icona dell'app (scheda del browser / telefono): logo su sfondo nero -->
-  <rect width="64" height="64" rx="14" fill="#0a0a0b"/>
-  <g transform="translate(6 6) scale(0.8125)">
-    <polygon points="10,12 22,12 54,52 42,52" fill="#1c1c1f" stroke="#c6f31a" stroke-width="2.5" stroke-linejoin="round"/>
-    <polygon points="6.6,48.4 40.6,16.4 37.1,12.7 56,8 50.9,27.3 47.4,23.6 13.4,55.6"
-             fill="#c6f31a" stroke="#0a0a0b" stroke-width="1.5" stroke-linejoin="round" paint-order="stroke"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icona dell'app (scheda del browser): la X verde su sfondo nero -->
+  <rect width="512" height="512" rx="112" fill="#0a0a0b"/>
+  <g transform="translate(66 147) scale(0.7308)">
+    <polygon points="37,0 217,0 327,91 110,298 0,298 182,123" fill="#d1fe17"/>
+    <polygon points="392,80 515,80 387,193 520,298 329,298 239,213" fill="#d1fe17"/>
   </g>
 </svg>

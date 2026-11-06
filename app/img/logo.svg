@@ -1,8 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Logo XECUTE: la X con la freccia verde che sale -->
-  <!-- gamba "\" della X: scura con il bordo verde -->
-  <polygon points="10,12 22,12 54,52 42,52" fill="#1c1c1f" stroke="#c6f31a" stroke-width="2.5" stroke-linejoin="round"/>
-  <!-- freccia verde (l'altra gamba della X) -->
-  <polygon points="6.6,48.4 40.6,16.4 37.1,12.7 56,8 50.9,27.3 47.4,23.6 13.4,55.6"
-           fill="#c6f31a" stroke="#0a0a0b" stroke-width="1.5" stroke-linejoin="round" paint-order="stroke"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 298">
+  <!-- Logo X-ECUTE: la X fatta da due frecce verdi -->
+  <polygon points="37,0 217,0 327,91 110,298 0,298 182,123" fill="#d1fe17"/>
+  <polygon points="392,80 515,80 387,193 520,298 329,298 239,213" fill="#d1fe17"/>
 </svg>

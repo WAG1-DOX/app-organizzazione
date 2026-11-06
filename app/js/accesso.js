@@ -134,7 +134,8 @@ function mostraAccesso(errore, quandoDentro) {
 
   const schermata = h("div", { class: "accesso", id: "accesso" },
     h("div", { class: "accesso-box" },
-      h("img", { class: "accesso-copertina", src: "img/logo-grande.jpg", alt: "XECUTE" }),
+      h("div", { class: "accesso-marchio" },
+        h("img", { src: "img/logo.svg", alt: "" }), h("span", { class: "logo-nome" }, "X-ECUTE")),
       h("h2", {}, modoAccesso === "accedi" ? "Bentornato" : modoAccesso === "registrati" ? "Crea il tuo account" : "Password dimenticata"),
       h("p", { class: "testo-leggero" }, modoAccesso === "recupero"
         ? "Scrivi la tua email: ti mandiamo un link per scegliere una nuova password."
