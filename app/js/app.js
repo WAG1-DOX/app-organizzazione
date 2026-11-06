@@ -261,6 +261,8 @@ avviaAccesso(async () => {
   if (serveConfigurazione()) apriConfigurazione();
   // gruppi e messaggi (chat.js): li scarichiamo subito, così il pallino dei non letti è giusto
   caricaSocial().then(ridisegnaChat);
+  // Google Calendar: se eri già collegato (funzione "google" su Supabase), si ricollega da solo
+  if (typeof avviaGoogleAutomatico === "function") avviaGoogleAutomatico().catch(() => {});
 });
 
 // Se Google Calendar è già stato configurato, prepariamo subito il suo script
