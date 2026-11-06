@@ -155,7 +155,8 @@ const VERSIONE_MAIL = 2;   // se cambia, le intestazioni delle mail si rileggono
 // ---------- Da quale account arriva (inoltro automatico, es. la mail della scuola) ----------
 // Gmail, quando inoltra, aggiunge "X-Forwarded-For: account-originale tuo-indirizzo".
 // Se manca, guardiamo i destinatari: un indirizzo della scuola tra i "A:" basta.
-function nomeConto(email) {
+// (si chiama nomeAccountMail e non nomeConto: "nomeConto" c'è già in banca.js e due nomi uguali bloccano l'app)
+function nomeAccountMail(email) {
   const dominio = dominioDi(email);
   if (/h-?farm/i.test(dominio)) return "H-FARM";
   const base = dominio.split(".").filter((p) => !/^(student|students|studenti|mail|email|my|stud)$/i.test(p)).slice(-2, -1)[0] || dominio;
@@ -164,9 +165,9 @@ function nomeConto(email) {
 function contoDi(g, a) {
   const inoltro = indirizziDi(intestazione(g, "X-Forwarded-For").replace(/\s+/g, ","))
     .find((e) => !Posta.email || e !== Posta.email);
-  if (inoltro) return { conto: nomeConto(inoltro), contoEmail: inoltro };
+  if (inoltro) return { conto: nomeAccountMail(inoltro), contoEmail: inoltro };
   const scuola = a.find((e) => /h-?farm/i.test(dominioDi(e)));
-  if (scuola) return { conto: nomeConto(scuola), contoEmail: scuola };
+  if (scuola) return { conto: nomeAccountMail(scuola), contoEmail: scuola };
   return { conto: "personale", contoEmail: Posta.email || null };
 }
 async function leggiIntestazioni(id, quali = INTESTAZIONI) {
@@ -257,13 +258,8 @@ async function aggiornaPosta(forza = false) {
       idDaRicerca(`in:inbox is:unread newer_than:${GIORNI_INBOX}d`, MAX_INBOX),
     ]);
     const note = new Map(Posta.mail.map((m) => [m.id, m]));
-<<<<<<< Updated upstream
     const nuove = idInbox.filter((id) => !note.has(id) || note.get(id).v !== VERSIONE_MAIL);
-    const lette = await aPiccoliGruppi(nuove, 8, leggiIntestazioni);
-=======
-    const nuove = idInbox.filter((id) => !note.has(id));
     const lette = await aPiccoliGruppi(nuove, 5, leggiIntestazioni);   // 5 alla volta: sotto il limite di Gmail
->>>>>>> Stashed changes
     for (const g of lette) if (g) note.set(g.id, mailDaGmail(g));
     const nonLette = new Set(idNonLette);
     Posta.mail = idInbox.map((id) => note.get(id)).filter(Boolean).map((m) => {
