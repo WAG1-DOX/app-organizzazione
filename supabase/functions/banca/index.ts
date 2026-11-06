@@ -12,7 +12,7 @@
 //  - banche         → elenco delle banche di un paese
 //  - collega        → inizia il collegamento: restituisce il link del sito della banca
 //  - completa       → al ritorno dalla banca (code + state) salva il collegamento
-//  - movimenti      → legge i movimenti nuovi di tutte le tue banche
+//  - movimenti      → legge movimenti (anche quelli "in attesa") e saldi di tutte le tue banche
 //  - scollega       → chiude un collegamento
 //
 //  Segreto da mettere in Supabase (Edge Functions → Secrets):
@@ -153,30 +153,70 @@ function intestazioniPsu(req: Request): Record<string, string> {
 }
 
 // ---------- Movimento di Enable Banking → movimento dell'app ----------
+// Mandiamo all'app i dati "grezzi" (controparte, causale, codice del negozio): la pulizia
+// del nome e la categoria le fa l'app (banca.js), così valgono anche per l'import CSV.
 function nomeControparte(t: any): string {
   const dbit = t.credit_debit_indicator === "DBIT";
   return ((dbit ? t.creditor?.name : t.debtor?.name) ?? "").trim();
 }
+const STATI_IN_ATTESA = new Set(["PDNG", "HOLD"]);
+// la "chiave" di un conto resta uguale anche se ricolleghi la banca (l'uid invece cambia)
+const chiaveConto = (c: any) => String(c.chiave || c.iban || c.uid);
+
 async function convertiMovimento(t: any, conto: any, ibanMiei: Set<string>) {
   const importo = Math.abs(Number(t.transaction_amount?.amount ?? 0));
-  const data = t.booking_date || t.value_date || t.transaction_date || "";
-  const remittance = Array.isArray(t.remittance_information) ? t.remittance_information.join(" ").trim() : String(t.remittance_information ?? "").trim();
+  const data = String(t.booking_date || t.value_date || t.transaction_date || "").slice(0, 10);
+  const remittance = Array.isArray(t.remittance_information) ? t.remittance_information.join(" ").replace(/\s+/g, " ").trim() : String(t.remittance_information ?? "").trim();
   const controparte = nomeControparte(t);
   const ibanAltro = (t.credit_debit_indicator === "DBIT" ? t.creditor_account?.iban : t.debtor_account?.iban) ?? "";
-  const riferimento = t.entry_reference || t.transaction_id || `${data}|${importo}|${remittance}|${controparte}`;
+  const inAttesa = STATI_IN_ATTESA.has(t.status);
+  // i movimenti in attesa non hanno un riferimento stabile: li riconosciamo da data, importo e testo
+  const riferimento = inAttesa
+    ? `ATTESA|${data}|${importo}|${remittance}|${controparte}`
+    : (t.entry_reference || t.transaction_id || `${data}|${importo}|${remittance}|${controparte}`);
   return {
-    id: `eb-${(await sha256(`${conto.uid}|${riferimento}`)).slice(0, 24)}`,
+    id: `${inAttesa ? "ebp" : "eb"}-${(await sha256(`${chiaveConto(conto)}|${riferimento}`)).slice(0, 24)}`,
     tipo: t.credit_debit_indicator === "CRDT" ? "entrata" : "uscita",
     importo: Math.round(importo * 100) / 100,
     valuta: t.transaction_amount?.currency ?? "EUR",
-    data: String(data).slice(0, 10),
-    descrizione: (controparte || remittance || t.bank_transaction_code?.description || "Movimento bancario").slice(0, 80),
-    dettagli: remittance.slice(0, 200),
+    data,
+    descrizione: (controparte || remittance || t.bank_transaction_code?.description || "Movimento bancario").slice(0, 120),
+    controparte: controparte.slice(0, 120),
+    dettagli: remittance.slice(0, 300),
+    codice_banca: String(t.bank_transaction_code?.description ?? t.bank_transaction_code?.code ?? "").slice(0, 80),
     mcc: t.merchant_category_code ?? null,
     conto: conto.nome,
+    conto_chiave: chiaveConto(conto),
+    in_attesa: inAttesa,
     // giroconto = soldi spostati tra due tuoi conti collegati: non è né una spesa né un'entrata vera
     giroconto: !!ibanAltro && ibanMiei.has(String(ibanAltro).replace(/\s/g, "").toUpperCase()),
   };
+}
+
+// Il saldo "migliore" di un conto: prima il disponibile, poi il contabile
+const ORDINE_SALDI = ["ITAV", "CLAV", "XPCD", "ITBD", "CLBD", "OPAV", "OPBD", "PRCD", "OTHR"];
+function saldoMigliore(balances: any[]) {
+  const ordinati = [...(balances ?? [])].sort((a, b) => {
+    const ia = ORDINE_SALDI.indexOf(a.balance_type), ib = ORDINE_SALDI.indexOf(b.balance_type);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  return ordinati[0] ?? null;
+}
+
+// Gli errori di Enable Banking / della banca, spiegati in italiano
+function spiegaErrore(e: any): { messaggio: string; scaduto: boolean } {
+  const testo = `${e?.message ?? ""} ${JSON.stringify(e?.dettaglio ?? "")}`.toUpperCase();
+  const codice = e?.codice ?? 0;
+  if (/EXPIRED|REVOKED|CLOSED_SESSION|SESSION_(NOT_FOUND|INVALID)|CONSENT|INVALID_SESSION|ACCESS_DENIED/.test(testo) || codice === 401 || codice === 403) {
+    return { messaggio: "il permesso della banca è scaduto o è stato revocato: premi «Rinnova»", scaduto: true };
+  }
+  if (/RATE_LIMIT|TOO_MANY/.test(testo) || codice === 429) {
+    return { messaggio: "la banca permette poche letture al giorno: riprova fra qualche ora", scaduto: false };
+  }
+  if (/UNAVAILABLE|TIMEOUT|ASPSP_ERROR|503|502|504/.test(testo) || codice >= 500) {
+    return { messaggio: "la banca in questo momento non risponde: riprova più tardi", scaduto: false };
+  }
+  return { messaggio: String(e?.message ?? "errore sconosciuto").replace(/^Enable Banking: /, ""), scaduto: false };
 }
 
 // =====================================================================
@@ -217,7 +257,9 @@ Deno.serve(async (req) => {
           chiave: !!chiave,
           application_id: chiave?.application_id ?? null,
           collegamenti: (collegamenti ?? []).map((c) => ({
-            ...c, conti: (c.conti ?? []).map((x: any) => ({ nome: x.nome, iban_finale: x.iban ? String(x.iban).slice(-4) : "", valuta: x.valuta })),
+            ...c, conti: (c.conti ?? []).map((x: any) => ({
+              chiave: chiaveConto(x), nome: x.nome, iban_finale: x.iban ? String(x.iban).slice(-4) : "", valuta: x.valuta, tipo: x.tipo ?? null,
+            })),
           })),
         });
       }
@@ -295,16 +337,27 @@ Deno.serve(async (req) => {
         const sessione = await chiamaEB(jwt, "POST", "/sessions", { code }, intestazioniPsu(req));
         const conti = (sessione.accounts ?? []).map((a: any) => ({
           uid: a.uid,
+          chiave: a.account_id?.iban || a.identification_hash || a.uid,
           nome: a.name || a.product || a.details || attesa.banca,
           iban: a.account_id?.iban ?? null,
           valuta: a.currency ?? "EUR",
+          tipo: a.cash_account_type ?? null,   // CACC conto, CARD carta, SVGS risparmio…
+          prodotto: a.product ?? null,
         }));
         const { data: nuovo, error } = await admin.from("banca_collegamenti").insert({
           utente_id: user.id, session_id: sessione.session_id, banca: attesa.banca, paese: attesa.paese,
           conti, valido_fino: sessione.access?.valid_until ?? null,
         }).select("id").single();
         if (error) throw new ErroreUtente("Non riesco a salvare il collegamento.", 500);
-        return risposta({ ok: true, id: nuovo.id, banca: attesa.banca, conti: conti.length });
+        // le banche italiane tengono UN solo permesso alla volta: i collegamenti vecchi della stessa banca
+        // (es. dopo «Rinnova») non funzionano più, quindi li togliamo
+        const { data: vecchi } = await admin.from("banca_collegamenti").select("id, session_id")
+          .eq("utente_id", user.id).eq("banca", attesa.banca).eq("paese", attesa.paese).neq("id", nuovo.id);
+        for (const v of vecchi ?? []) {
+          if (v.session_id !== sessione.session_id) { try { await chiamaEB(jwt, "DELETE", `/sessions/${v.session_id}`); } catch { /* già chiusa */ } }
+          await admin.from("banca_collegamenti").delete().eq("id", v.id);
+        }
+        return risposta({ ok: true, id: nuovo.id, banca: attesa.banca, conti: conti.length, sostituiti: (vecchi ?? []).length });
       }
 
       // ---------------------------------------------------------------
@@ -315,38 +368,59 @@ Deno.serve(async (req) => {
         for (const c of collegamenti ?? []) for (const x of c.conti ?? []) if (x.iban) ibanMiei.add(String(x.iban).replace(/\s/g, "").toUpperCase());
 
         const movimenti: any[] = [];
-        const avvisi: string[] = [];
+        const saldi: any[] = [];
+        const letti: string[] = [];     // conti letti bene (l'app ci sostituisce i movimenti "in attesa")
+        const esiti: any[] = [];
         const psu = intestazioniPsu(req);
         for (const c of collegamenti ?? []) {
-          if (c.valido_fino && new Date(c.valido_fino) < new Date()) { avvisi.push(`${c.banca}: il permesso è scaduto, ricollega la banca.`); continue; }
-          // dalla lettura precedente (con 5 giorni di margine) oppure gli ultimi 90 giorni
-          const da = c.ultimo_aggiornamento
-            ? new Date(new Date(c.ultimo_aggiornamento).getTime() - 5 * 86400000)
-            : new Date(Date.now() - GIORNI_PRIMA_LETTURA * 86400000);
+          const esito = { id: c.id, banca: c.banca, ok: true, scaduto: false, errori: [] as string[] };
+          esiti.push(esito);
+          if (c.valido_fino && new Date(c.valido_fino) < new Date()) {
+            esito.ok = false; esito.scaduto = true; esito.errori.push("il permesso è scaduto: premi «Rinnova»");
+            continue;
+          }
+          // la prima volta: più storia possibile; dopo: dalla lettura precedente con 7 giorni di margine
+          const primaVolta = !c.ultimo_aggiornamento;
+          const da = primaVolta
+            ? new Date(Date.now() - GIORNI_PRIMA_LETTURA * 86400000)
+            : new Date(new Date(c.ultimo_aggiornamento).getTime() - 7 * 86400000);
           const dateFrom = da.toISOString().slice(0, 10);
-          let tuttoBene = true;
           for (const conto of c.conti ?? []) {
             try {
               let chiave: string | null = null;
               for (let pagina = 0; pagina < MAX_PAGINE; pagina++) {
                 const q = new URLSearchParams({ date_from: dateFrom });
+                if (primaVolta) q.set("strategy", "longest");
                 if (chiave) q.set("continuation_key", chiave);
                 const dati = await chiamaEB(jwt, "GET", `/accounts/${conto.uid}/transactions?${q}`, undefined, psu);
                 for (const t of dati?.transactions ?? []) {
-                  if (t.status && t.status !== "BOOK") continue; // solo quelli contabilizzati (i "in attesa" cambiano)
+                  if (t.status && t.status !== "BOOK" && !STATI_IN_ATTESA.has(t.status)) continue; // annullati, rifiutati…
                   movimenti.push(await convertiMovimento(t, conto, ibanMiei));
                 }
                 chiave = dati?.continuation_key ?? null;
                 if (!chiave) break;
               }
+              letti.push(chiaveConto(conto));
             } catch (e) {
-              tuttoBene = false;
-              avvisi.push(`${c.banca} (${conto.nome}): ${(e as Error).message}`);
+              const { messaggio, scaduto } = spiegaErrore(e);
+              esito.ok = false; esito.scaduto = esito.scaduto || scaduto;
+              esito.errori.push(`${conto.nome}: ${messaggio}`);
             }
+            // il saldo (se non riesce, pazienza: i movimenti contano di più)
+            try {
+              const b = await chiamaEB(jwt, "GET", `/accounts/${conto.uid}/balances`, undefined, psu);
+              const migliore = saldoMigliore(b?.balances);
+              if (migliore) saldi.push({
+                chiave: chiaveConto(conto), banca: c.banca, nome: conto.nome, tipo_conto: conto.tipo ?? null,
+                saldo: Number(migliore.balance_amount?.amount ?? 0), valuta: migliore.balance_amount?.currency ?? conto.valuta ?? "EUR",
+                tipo_saldo: migliore.balance_type, data: migliore.last_change_date_time || migliore.reference_date || new Date().toISOString(),
+              });
+            } catch { /* saldo non disponibile per questo conto */ }
           }
-          if (tuttoBene) await admin.from("banca_collegamenti").update({ ultimo_aggiornamento: new Date().toISOString() }).eq("id", c.id);
+          if (esito.ok) await admin.from("banca_collegamenti").update({ ultimo_aggiornamento: new Date().toISOString() }).eq("id", c.id);
         }
-        return risposta({ movimenti, avvisi });
+        const avvisi = esiti.flatMap((e) => e.errori.map((x: string) => `${e.banca} · ${x}`));
+        return risposta({ movimenti, saldi, letti, esiti, avvisi });
       }
 
       // ---------------------------------------------------------------

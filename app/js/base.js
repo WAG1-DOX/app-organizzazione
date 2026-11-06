@@ -95,7 +95,9 @@ function statoIniziale() {
     obiettiviLungo: [],
     // configurazione guidata: completata = già fatta; dal = giorno da cui contano Monitor e punteggi
     configurazione: { completata: false, dal: oggiChiave() },
-    banca: { attiva: false, ignorati: [] },   // banche collegate (banca.js): attiva = Enable Banking configurato
+    // banche collegate (banca.js): attiva = Enable Banking configurato; ignorati = movimenti eliminati apposta;
+    // saldi = ultimo saldo di ogni conto; conti = { chiave: { nome, nascosto } }; regole = { negozio: categoria }
+    banca: { attiva: false, ignorati: [], saldi: {}, conti: {}, regole: {} },
   };
 }
 
@@ -367,8 +369,18 @@ function quotaQuotidiane(k) {
   return { fatte, totali, quota: totali ? fatte / totali : 0 };
 }
 
+// Un movimento conta nei totali (spese, saldo, budget, Monitor)? No se è un giroconto tra tuoi conti,
+// se è in un'altra valuta, o se viene da un conto che hai nascosto (vedi banca.js)
+function contaNeiTotali(m) {
+  if (m.giroconto) return false;
+  if (m.valuta && m.valuta !== "EUR") return false;
+  const conti = stato.banca && stato.banca.conti;
+  if (m.conto_chiave && conti && conti[m.conto_chiave] && conti[m.conto_chiave].nascosto) return false;
+  return true;
+}
+
 const usciteDelGiorno = (k) =>
-  stato.movimenti.filter((m) => m.tipo === "uscita" && m.data === k && !m.giroconto).reduce((s, m) => s + m.importo, 0);
+  stato.movimenti.filter((m) => m.tipo === "uscita" && m.data === k && contaNeiTotali(m)).reduce((s, m) => s + m.importo, 0);
 
 const giorniNelMese = (anno, mese) => new Date(anno, mese + 1, 0).getDate();
 // Categorie delle uscite: quelle del tuo budget (o, se non l'hai ancora fatto, alcune di base)
@@ -388,7 +400,7 @@ function movimentiDelMese(anno, mese) {
 function totaliMese(anno, mese) {
   const lista = movimentiDelMese(anno, mese);
   // i giroconti (soldi spostati tra due tuoi conti) si vedono nell'elenco ma non contano nei totali
-  const veri = lista.filter((m) => !m.giroconto);
+  const veri = lista.filter(contaNeiTotali);
   const entrate = veri.filter((m) => m.tipo === "entrata").reduce((s, m) => s + m.importo, 0);
   const uscite = veri.filter((m) => m.tipo === "uscita").reduce((s, m) => s + m.importo, 0);
   return { entrate, uscite, saldo: entrate - uscite, lista };
@@ -563,7 +575,7 @@ function puntiSaldoMese(anno, mese) {
     const d = new Date(anno, mese, g);
     const k = chiaveGiorno(d);
     if (k > oggiK) break;
-    for (const m of stato.movimenti) if (m.data === k && !m.giroconto) saldo += m.tipo === "entrata" ? m.importo : -m.importo;
+    for (const m of stato.movimenti) if (m.data === k && contaNeiTotali(m)) saldo += m.tipo === "entrata" ? m.importo : -m.importo;
     punti.push({ etichetta: String(g), etichettaLunga: dataBreve(d), valore: Math.round(saldo * 100) / 100 });
   }
   return punti;

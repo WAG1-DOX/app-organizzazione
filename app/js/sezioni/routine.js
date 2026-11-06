@@ -103,7 +103,7 @@ function consigli(r, anno, mese) {
   const sforati = passati.filter((g) => g.uscite > g.limite);
   if (sforati.length) {
     const perCat = {};
-    for (const m of movimentiDelMese(anno, mese)) if (m.tipo === "uscita" && !m.giroconto) perCat[m.categoria] = (perCat[m.categoria] || 0) + m.importo;
+    for (const m of movimentiDelMese(anno, mese)) if (m.tipo === "uscita" && contaNeiTotali(m)) perCat[m.categoria] = (perCat[m.categoria] || 0) + m.importo;
     const top = Object.entries(perCat).sort((a, b) => b[1] - a[1])[0];
     lista.push(`Hai superato il budget giornaliero in ${sforati.length} giorni. La categoria dove spendi di più è «${top[0]}» (${euro(top[1])}): fissati un tetto settimanale per quella.`);
   } else if (passati.length) {

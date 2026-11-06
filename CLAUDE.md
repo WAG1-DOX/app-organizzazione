@@ -171,6 +171,13 @@ Esempio di evento come arriverà all'app (usare questa forma per tutti gli event
   categoria indovinata, senza doppioni; `giroconto: true` = soldi tra due propri conti (non conta nei totali).
   `stato.banca = { attiva, ignorati }` (chiave cloud `banca`): `ignorati` = movimenti importati e poi eliminati.
 - Piano B: Spese → "Importa estratto conto (CSV)" (Revolut, Fineco, Fideuram… colonne riconosciute da sole).
+- Versione 2 (6 nov): la funzione manda anche i movimenti **in attesa** (`in_attesa`, id `ebp-…`, diventano
+  definitivi da soli), i **saldi** di ogni conto (`stato.banca.saldi`), errori spiegati (permesso scaduto → «Rinnova»);
+  alla prima lettura `strategy=longest`; «Rinnova» sostituisce il collegamento vecchio della stessa banca.
+  Nell'app: nomi ripuliti (es. "PAGAMENTO POS … PRESSO CONAD" → "Conad"), categoria da MCC + parole + regole
+  imparate (`stato.banca.regole`), giroconti anche "a coppie" (ricarica Revolut da Fideuram), conti rinominabili
+  o nascosti (`stato.banca.conti`), grafico del saldo reale, analisi e consigli (`analisiMese`, `trovaAbbonamenti`).
+  Regola unica per i totali: `contaNeiTotali(m)` in base.js (niente giroconti, conti nascosti, valute ≠ EUR).
 
 ## Salvataggio su Supabase (`app/js/sincronizza.js`)
 - Il browser tiene una copia (localStorage); dopo il login comandano i dati del database.

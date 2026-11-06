@@ -1627,3 +1627,79 @@ body.in-configurazione { overflow: hidden; }
 .anteprima-csv li { padding: 6px 0; }
 .link-categoria { background: none; border: none; padding: 0; color: inherit; font: inherit; text-decoration: underline dotted; cursor: pointer; }
 .link-categoria:hover { color: var(--accento); }
+
+/* ============================================================
+   SPESE 2.0 — conti, movimenti, consigli (spese.js + banca.js)
+   ============================================================ */
+.sotto-numero { display: block; margin-top: 4px; font-size: 12px !important; color: var(--testo-tenue) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.numero-card .barra-binario { margin-top: 8px; }
+
+/* conti e banche */
+.totale-conti { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; margin-bottom: 12px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(209, 254, 23, 0.14), rgba(209, 254, 23, 0.03)); border: 1px solid var(--accento-bordo, rgba(209,254,23,.3)); }
+.totale-conti small { color: var(--testo-leggero); font-size: 12px; }
+.totale-conti strong { font-size: 28px; letter-spacing: -0.02em; }
+.blocco-banca { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--bordo); }
+.blocco-banca:last-of-type { border-bottom: none; }
+.blocco-banca-testa { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.blocco-banca-testa .spazio { flex: 1; }
+.conti-banca { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.riga-conto { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; text-align: left;
+  background: var(--pannello); border: 1px solid transparent; color: var(--testo); cursor: pointer; }
+.riga-conto:hover { border-color: var(--bordo); }
+.riga-conto .riga-testo { flex: 1; min-width: 0; }
+.riga-conto.conto-nascosto { opacity: 0.5; }
+.saldo-conto { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* movimenti */
+.pannello-azioni-gruppo { display: flex; align-items: center; gap: 8px; }
+.filtri-movimenti { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.filtri-movimenti input[type=search] { width: 100%; }
+.segmenti.piccoli button { padding: 6px 10px; font-size: 13px; flex: 1; }
+.due-campi.stretti { gap: 8px; flex-wrap: nowrap; }
+.due-campi.stretti select { flex: 1; min-width: 0; padding: 8px 10px; font-size: 13px; }
+.riepilogo-filtro { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; margin-bottom: 6px;
+  border-radius: 10px; background: var(--pannello); font-size: 13px; color: var(--testo-leggero); }
+.riepilogo-filtro .link-sottile { margin: 0; background: none; border: none; padding: 0; }
+.giorno-movimenti { margin-bottom: 6px; }
+.giorno-movimenti-testa { display: flex; justify-content: space-between; padding: 10px 2px 2px; font-size: 12px; color: var(--testo-tenue); text-transform: capitalize; }
+.riga-movimento { cursor: pointer; border-radius: 12px; padding: 8px 6px !important; margin: 0 -6px; }
+.riga-movimento:hover { background: var(--pannello); }
+.riga-movimento.scelta { background: rgba(209, 254, 23, 0.08); }
+.riga-movimento.non-conta .riga-testo strong { color: var(--testo-leggero); }
+.riga-movimento .riga-testo { flex: 1; min-width: 0; }
+.riga-movimento .riga-testo strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.riga-movimento .riga-testo small { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.avatar-movimento { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; font-weight: 700; font-size: 15px;
+  color: var(--colore); background: color-mix(in srgb, var(--colore) 14%, transparent); border: 1px solid color-mix(in srgb, var(--colore) 30%, transparent); }
+.etichetta-categoria { color: var(--colore); font-weight: 600; }
+.importo-movimento { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.barra-selezione { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; margin-bottom: 8px; border-radius: 12px;
+  background: rgba(209, 254, 23, 0.08); border: 1px solid rgba(209, 254, 23, 0.25); font-size: 13px; position: sticky; top: 8px; z-index: 2; }
+.barra-selezione .spazio { flex: 1; }
+.barra-selezione .link-sottile { margin: 0; background: none; border: none; padding: 0; }
+
+/* budget cliccabile */
+.riga-budget-cliccabile { cursor: pointer; border-radius: 10px; }
+.riga-budget-cliccabile:hover strong { color: var(--accento); }
+.pallino-categoria { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+
+/* consigli */
+.lista-consigli { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.consiglio { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--pannello); font-size: 14px; line-height: 1.45; }
+.consiglio-icona { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--testo-leggero); }
+.consiglio.tono-ok .consiglio-icona { color: var(--verde); background: rgba(74, 222, 128, 0.1); }
+.consiglio.tono-attenzione .consiglio-icona { color: #f4a261; background: rgba(244, 162, 97, 0.12); }
+.consiglio.tono-pericolo .consiglio-icona { color: var(--rosso); background: rgba(248, 113, 113, 0.12); }
+.classifica { margin-top: 14px; }
+.classifica ol { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; counter-reset: c; }
+.classifica li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 4px 0; border-bottom: 1px dashed var(--bordo); }
+.classifica li:last-child { border-bottom: none; }
+.classifica li small { color: var(--testo-tenue); }
+
+/* dettaglio movimento */
+.dettaglio-importo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.dettaglio-importo strong { font-size: 30px; letter-spacing: -0.02em; }
+.testo-originale { font-size: 12px; color: var(--testo-leggero); word-break: break-word; }
+.filtri-movimenti .segmenti { display: flex; }
+.consiglio { color: var(--testo); }
