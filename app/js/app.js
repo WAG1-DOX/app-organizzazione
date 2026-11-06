@@ -179,7 +179,7 @@ document.getElementById("bottone-assistente").addEventListener("click", apriAssi
 // ---------- Assistente: manda la domanda alla funzione "assistente" di Supabase ----------
 // La funzione legge da sola i tuoi eventi dei prossimi 7 giorni (dal database) e chiede a Claude.
 function apriAssistente() {
-  const domanda = h("textarea", { rows: 3, maxlength: 2000, placeholder: "Es. «Organizzami la settimana» o «Quando ho tempo per studiare domani?»" });
+  const domanda = h("textarea", { rows: 3, maxlength: 2000, placeholder: "Es. «Ho pranzato e preso la creatina» o «Ricordami di chiamare la nonna venerdì alle 18»" });
   const bottone = h("button", { class: "bottone-accento largo", type: "submit" }, "Chiedi");
   const risposta = h("div", { class: "assistente-risposta", "aria-live": "polite" });
 
@@ -210,6 +210,20 @@ function apriAssistente() {
       risposta.textContent = "";
       String(data.risposta || "").split(/\*\*(.+?)\*\*/g)
         .forEach((pezzo, i) => risposta.append(i % 2 ? h("strong", {}, pezzo) : pezzo));
+      // l'assistente ha spuntato caselle o creato promemoria: lo mostriamo e ricarichiamo i dati
+      if (Array.isArray(data.azioni) && data.azioni.length) {
+        risposta.append(h("ul", { class: "assistente-azioni" }, data.azioni.map((a) => h("li", {}, a))));
+      }
+      if (Array.isArray(data.cambiati) && data.cambiati.length && typeof scaricaDalCloud === "function") {
+        try {
+          await applicaDalCloud(await scaricaDalCloud());
+          disegna();
+          // i promemoria nuovi con una data vanno anche sul calendario Google "Promemoria"
+          if (typeof inviaPromemoriaAGoogle === "function") {
+            for (const p of stato.promemoria.filter((x) => x.da_inviare)) inviaPromemoriaAGoogle(p);
+          }
+        } catch (e) { /* li vedrai al prossimo aggiornamento */ }
+      }
     } catch (e) {
       risposta.className = "assistente-risposta errore";
       risposta.textContent = e.message || "L'assistente non risponde, riprova tra poco.";
@@ -226,7 +240,7 @@ function apriAssistente() {
   });
 
   apriModale("Chiedi all'assistente",
-    h("p", { class: "testo-leggero" }, "L'assistente vede i tuoi eventi dei prossimi 7 giorni. Per ora risponde e consiglia: non modifica ancora il calendario."),
+    h("p", { class: "testo-leggero" }, "Vede i tuoi impegni e le caselle di oggi. Puoi dirgli cosa hai fatto («ho pranzato e preso la creatina») o chiedergli di ricordarti qualcosa."),
     modulo,
     risposta);
   domanda.focus();

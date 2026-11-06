@@ -1481,6 +1481,9 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
 .assistente-risposta:empty { display: none; }
 .assistente-risposta.caricamento { color: var(--testo-leggero); }
 .assistente-risposta.errore { color: var(--rosso); }
+/* cosa ha fatto l'assistente (caselle spuntate, promemoria creati) */
+.assistente-azioni { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; white-space: normal; }
+.assistente-azioni li { padding: 5px 10px; border-radius: 999px; font-size: 13px; background: var(--accento-tenue); border: 1px solid var(--accento-bordo); color: var(--testo); }
 
 /* ===== Chat e gruppi ===== */
 .pallino-menu { position: static; margin-left: auto; }
