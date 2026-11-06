@@ -102,7 +102,7 @@ function disegnaChat() {
     h("button", { class: "chat-tondo", type: "button", "aria-label": Chat.vista === "storico" ? "Torna alla chat" : "Chat dei giorni prima",
       onclick: async () => {
         if (Chat.vista === "storico") { Chat.vista = "chat"; disegnaChat(); return; }
-        Chat.vista = "storico"; disegnaChat(); await caricaStoricoChat(); disegnaChat();
+        Chat.vista = "storico"; disegnaChat(); await Promise.all([caricaStoricoChat(), caricaTelegram()]); disegnaChat();
       } }, Chat.vista === "storico" ? icona("sinistra", 18) : iconaMenuChat()),
     h("div", { class: "chat-titolo" },
       h("strong", {}, Chat.vista === "storico" ? "Chat precedenti" : "Assistente"),
@@ -166,7 +166,78 @@ function disegnaMessaggi() {
   return lista;
 }
 
+// ---------- Telegram: scrivere / mandare vocali all'assistente dal bot ----------
+// La funzione "assistente" (azione "telegram") dice il nome del bot; il collegamento
+// si fa con un codice di 8 lettere (funzione SQL codice_telegram, 09_telegram.sql).
+const Telegram = { caricato: false, attivo: false, bot: "", collegato: null, codice: "", inAttesa: false };
+
+async function caricaTelegram() {
+  if (typeof sb === "undefined" || !sb || !utenteSupabase) return;
+  try {
+    const [info, riga] = await Promise.all([
+      Telegram.caricato ? null : sb.functions.invoke("assistente", { body: { azione: "telegram" } }),
+      sb.from("telegram_collegamenti").select("nome_telegram").maybeSingle(),
+    ]);
+    if (info) {
+      Telegram.attivo = !!(info.data && info.data.attivo);
+      Telegram.bot = (info.data && info.data.bot) || "";
+      Telegram.caricato = true;
+    }
+    Telegram.collegato = riga && !riga.error ? riga.data : null;
+  } catch (e) { /* niente Telegram per ora */ }
+}
+
+async function creaCodiceTelegram() {
+  Telegram.inAttesa = true; disegnaChat();
+  const { data, error } = await sb.rpc("codice_telegram");
+  Telegram.inAttesa = false;
+  Telegram.codice = error ? "" : String(data || "");
+  if (error) alert("Non riesco a creare il codice, riprova.");
+  disegnaChat();
+}
+
+async function scollegaTelegram() {
+  if (!confirm("Scollegare Telegram? Il bot non ti riconoscerà più finché non lo ricolleghi.")) return;
+  await sb.from("telegram_collegamenti").delete().not("utente_id", "is", null);
+  Telegram.collegato = null; Telegram.codice = "";
+  disegnaChat();
+}
+
+function disegnaTelegram() {
+  if (!Telegram.attivo || !Telegram.bot) return null;
+  const link = (codice) => `https://t.me/${Telegram.bot}${codice ? `?start=${codice}` : ""}`;
+  if (Telegram.collegato) {
+    return h("div", { class: "chat-telegram" },
+      h("strong", {}, "Telegram collegato ✓"),
+      h("small", {}, `Scrivi o manda un vocale a @${Telegram.bot}: spunto le caselle anche da lì.`),
+      h("div", { class: "chat-telegram-bottoni" },
+        h("a", { class: "bottone-accento", href: link(""), target: "_blank", rel: "noopener" }, "Apri il bot"),
+        h("button", { class: "bottone-secondario", type: "button", onclick: scollegaTelegram }, "Scollega")));
+  }
+  if (Telegram.codice) {
+    return h("div", { class: "chat-telegram" },
+      h("strong", {}, "Ultimo passo"),
+      h("small", {}, "Tocca il pulsante e poi «Avvia» su Telegram. Se non si apre, manda al bot ",
+        h("b", {}, `@${Telegram.bot}`), " questo codice: ", h("b", {}, Telegram.codice), " (vale 15 minuti)."),
+      h("div", { class: "chat-telegram-bottoni" },
+        h("a", { class: "bottone-accento", href: link(Telegram.codice), target: "_blank", rel: "noopener" }, "Apri Telegram"),
+        h("button", { class: "bottone-secondario", type: "button", onclick: async () => {
+          Telegram.codice = ""; await caricaTelegram(); disegnaChat();
+        } }, "Fatto")));
+  }
+  return h("div", { class: "chat-telegram" },
+    h("strong", {}, "Usa l'assistente da Telegram"),
+    h("small", {}, "Scrivigli o mandagli un vocale («ho pranzato», «ricordami di…»), anche senza aprire l'app."),
+    h("div", { class: "chat-telegram-bottoni" },
+      h("button", { class: "bottone-accento", type: "button", disabled: Telegram.inAttesa, onclick: creaCodiceTelegram },
+        Telegram.inAttesa ? "Un attimo…" : "Collega Telegram")));
+}
+
 function disegnaStorico() {
+  return h("div", {}, disegnaTelegram(), disegnaListaStorico());
+}
+
+function disegnaListaStorico() {
   if (!Chat.giorni.length) return h("p", { class: "chat-vuoto" }, "Qui trovi le chat dei giorni prima. Per ora non ce ne sono.");
   return h("ul", { class: "chat-storico" }, Chat.giorni.map((g) =>
     h("li", {}, h("button", { type: "button", onclick: async () => {
@@ -190,8 +261,12 @@ function disegnaBarra() {
   });
   const invia = () => { const testo = input.value.trim(); if (testo && !Chat.inAttesa) inviaMessaggioChat(testo); };
 
-  const microfono = RiconoscimentoVoce && h("button", { class: "chat-mic", type: "button", "aria-label": "Detta a voce",
-    onclick: (e) => dettaAVoce(input, e.currentTarget) }, iconaMicrofono());
+  // Microfono: registra con il telefono e trascrive con Groq (va anche su iPhone).
+  // Se il browser non sa registrare, si usa la vecchia dettatura del browser.
+  const puoRegistrare = !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  const microfono = (puoRegistrare || RiconoscimentoVoce) && h("button", { class: "chat-mic", type: "button",
+    "aria-label": "Parla all'assistente",
+    onclick: (e) => puoRegistrare ? registraVoce(input, e.currentTarget) : dettaAVoce(input, e.currentTarget) }, iconaMicrofono());
 
   return h("form", { class: "chat-barra", onsubmit: (e) => { e.preventDefault(); invia(); } },
     h("div", { class: "chat-pillola" },
@@ -204,6 +279,60 @@ function iconaMicrofono() {
   const s = h("span", { class: "icona", "aria-hidden": "true" });
   s.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
   return s;
+}
+
+// Registrazione: tocchi il microfono → parli → lo ritocchi. L'audio va alla funzione "assistente"
+// (azione "trascrivi", Groq) e il testo viene mandato subito all'assistente.
+async function registraVoce(input, bottone) {
+  if (Chat.ascolto) { try { Chat.ascolto.stop(); } catch (e) {} return; }   // secondo tocco = fine
+  if (Chat.inAttesa) return;
+  let flusso;
+  try {
+    flusso = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    alert("Per parlare all'assistente devi permettere l'uso del microfono (impostazioni del browser).");
+    return;
+  }
+  const tipo = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"]
+    .find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+  const reg = tipo ? new MediaRecorder(flusso, { mimeType: tipo }) : new MediaRecorder(flusso);
+  const pezzi = [];
+  reg.ondataavailable = (ev) => { if (ev.data && ev.data.size) pezzi.push(ev.data); };
+  const limite = setTimeout(() => { try { reg.stop(); } catch (e) {} }, 120000); // max 2 minuti
+  reg.onstop = async () => {
+    clearTimeout(limite);
+    flusso.getTracks().forEach((t) => t.stop());          // spegne il microfono (sparisce il pallino rosso)
+    Chat.ascolto = null;
+    bottone.classList.remove("ascolto");
+    const audio = new Blob(pezzi, { type: reg.mimeType || tipo || "audio/webm" });
+    if (audio.size < 1500) return;                         // tocco per sbaglio: niente
+    if (!Chat.el.classList.contains("aperta")) return;     // chat chiusa mentre registravi
+    const prima = input.value.trim();
+    input.value = "Trascrivo…"; input.disabled = true; bottone.disabled = true;
+    try {
+      const b64 = await new Promise((ok, ko) => {
+        const fr = new FileReader();
+        fr.onload = () => ok(String(fr.result).split(",")[1] || "");
+        fr.onerror = ko;
+        fr.readAsDataURL(audio);
+      });
+      const { data, error } = await sb.functions.invoke("assistente", { body: { azione: "trascrivi", audio: b64, tipo: audio.type } });
+      if (error) {
+        let msg = "Non riesco a trascrivere, riprova.";
+        try { const c = await error.context.json(); if (c && c.errore) msg = c.errore; } catch (e) {}
+        throw new Error(msg);
+      }
+      input.disabled = false; bottone.disabled = false;
+      const testo = `${prima ? prima + " " : ""}${data.testo || ""}`.trim();
+      if (testo) inviaMessaggioChat(testo); else input.value = prima;
+    } catch (e) {
+      input.disabled = false; bottone.disabled = false; input.value = prima;
+      alert(e.message || "Non riesco a trascrivere, riprova.");
+    }
+  };
+  Chat.ascolto = reg;
+  bottone.classList.add("ascolto");
+  reg.start();
 }
 
 // Dettatura con il riconoscimento vocale del browser (Chrome, Safari): il testo finisce nella barra

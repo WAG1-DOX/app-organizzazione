@@ -1777,6 +1777,14 @@ body.in-configurazione { overflow: hidden; }
 .chat-storico button:hover { border-color: var(--bordo-forte); }
 .chat-storico small { color: var(--testo-leggero); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* riquadro "Collega Telegram" (sopra le chat precedenti) */
+.chat-telegram { display: flex; flex-direction: column; gap: 6px; padding: 14px; margin-bottom: 14px;
+  border-radius: 16px; background: rgba(209, 254, 23, 0.06); border: 1px solid rgba(209, 254, 23, 0.25); }
+.chat-telegram small { color: var(--testo-leggero); line-height: 1.4; }
+.chat-telegram b { color: var(--testo); letter-spacing: .04em; }
+.chat-telegram-bottoni { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.chat-telegram-bottoni a { text-decoration: none; }
+
 /* barra per scrivere, a pillola */
 .chat-barra { padding: 8px 12px 14px; }
 .chat-pillola { display: flex; align-items: flex-end; gap: 6px; padding: 6px 6px 6px 18px; border-radius: 30px;
