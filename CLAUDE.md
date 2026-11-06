@@ -149,6 +149,13 @@ Esempio di evento come arriverà all'app (usare questa forma per tutti gli event
 - [x] Sul telefono l'assistente è un bottone rotondo con la scintilla; toccando l'avatar si esce
 - [ ] Foto degli scontrini: restano solo nel browser (IndexedDB), non ancora su Supabase Storage
 
+## Sito online
+- Indirizzo: **https://xecute-app.vercel.app** (Vercel, piano gratuito, collegato al repository; pubblica la cartella `app/`).
+- Il repository GitHub è **pubblico** (6 nov): col piano gratuito Vercel bloccava i commit di Luca
+  perché il progetto Vercel è di Edoardo. Con il repository pubblico ogni Push di tutti e due va online da solo.
+- Quindi nel codice: **mai** segreti (solo la chiave pubblica di Supabase). Controllato il 6 nov: la storia è pulita.
+- Indirizzo aggiunto anche su Google Cloud (origini del Client ID) e su Supabase (URL Configuration).
+
 ## Salvataggio su Supabase (`app/js/sincronizza.js`)
 - Il browser tiene una copia (localStorage); dopo il login comandano i dati del database.
 - `salva()` in base.js, dopo 0,8 secondi, manda a Supabase SOLO quello che è cambiato:
