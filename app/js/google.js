@@ -306,7 +306,7 @@ function promemoriaDaGoogle(g, esistente) {
 
 function promemoriaVersoGoogle(p) {
   const corpo = { summary: (p.fatto ? "✓ " : "") + p.testo };
-  if (!p.google_id) corpo.description = "Promemoria di Organizza";
+  if (!p.google_id) corpo.description = "Promemoria di X-ECUTE";
   if (p.ora) {
     const inizio = daChiave(p.scadenza);
     const [hh, mm] = p.ora.split(":").map(Number);

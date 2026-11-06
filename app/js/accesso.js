@@ -134,8 +134,9 @@ function mostraAccesso(errore, quandoDentro) {
 
   const schermata = h("div", { class: "accesso", id: "accesso" },
     h("div", { class: "accesso-box" },
-      h("div", { class: "accesso-marchio" },
-        h("img", { src: "img/logo.svg", alt: "" }), h("span", { class: "logo-nome" }, "X-ECUTE")),
+      // il simbolo fa da "X": accanto basta "-ECUTE"
+      h("div", { class: "accesso-marchio", role: "img", "aria-label": "X-ECUTE" },
+        h("img", { src: "img/logo.svg", alt: "" }), h("span", { class: "logo-nome", "aria-hidden": "true" }, "-ECUTE")),
       h("h2", {}, modoAccesso === "accedi" ? "Bentornato" : modoAccesso === "registrati" ? "Crea il tuo account" : "Password dimenticata"),
       h("p", { class: "testo-leggero" }, modoAccesso === "recupero"
         ? "Scrivi la tua email: ti mandiamo un link per scegliere una nuova password."

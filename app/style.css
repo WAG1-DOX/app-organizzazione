@@ -87,7 +87,7 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 }
 
 .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; padding: 0 10px; display: flex; gap: 10px; align-items: center; }
-.logo-segno { width: 34px; height: auto; display: block; flex-shrink: 0; }
+.logo-segno { width: 46px; height: auto; display: block; flex-shrink: 0; }
 .logo-nome { font-style: italic; font-weight: 800; letter-spacing: 0.01em; color: #f5f5f0; }
 
 .menu { display: flex; flex-direction: column; gap: 4px; }
@@ -832,6 +832,7 @@ select option { background: #18181b; }
     backdrop-filter: blur(12px);
   }
   .logo { padding: 0; font-size: 17px; flex-shrink: 0; }
+  .logo-segno { width: 36px; }
   .menu { flex-direction: row; overflow-x: auto; scrollbar-width: none; min-width: 0; }
   .menu::-webkit-scrollbar { display: none; }
   .menu-voce { width: auto; white-space: nowrap; padding: 8px 12px; }
@@ -1458,7 +1459,7 @@ body.fuori .guscio, body.fuori .bottone-piu { visibility: hidden; }
 }
 .accesso-logo { padding: 0; font-size: 18px; }
 /* logo grande in cima alla scatola di login: la X verde + la scritta X-ECUTE bianca */
-.accesso-marchio { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px 0 14px; }
+.accesso-marchio { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 10px 0 14px; }
 .accesso-marchio img { width: 62px; height: auto; }
 .accesso-marchio .logo-nome { font-size: 34px; line-height: 1; }
 .accesso-box h2 { margin: 6px 0 0; font-size: 26px; letter-spacing: -0.02em; }
