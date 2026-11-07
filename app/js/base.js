@@ -200,16 +200,24 @@ const COLORI_EVENTO = [
 const eScuola = (e) => e.tipo === "scuola";
 const ePassato = (e) => new Date(e.fine) < new Date();
 
-// Colore con cui disegnare un evento: prima quello scelto da te, poi la scuola resta gialla,
-// poi il colore del suo calendario di Google; null = colore del tipo
+// Colore della materia di un evento (lezioni: "Mathematics for Business" → colore di quella materia).
+// Le lezioni arrivano da Google tutte con lo stesso colore del calendario: così ognuna ha il suo.
+function coloreMateria(e) {
+  const m = e && e.titolo ? materiaDi(e.titolo) : null;
+  return m && m.colore ? m.colore : null;
+}
+// Colore con cui disegnare un evento: prima quello scelto da te, poi quello della materia,
+// poi la scuola resta gialla, poi il colore del suo calendario di Google; null = colore del tipo
 function coloreEvento(e) {
   if (e.colore_scelto) return e.colore_scelto;
+  const materia = coloreMateria(e);
+  if (materia) return materia;
   if (eScuola(e)) return null;
   return e.colore || null;
 }
-// Classe CSS dell'evento (la scuola ha il giallo sfumato)
+// Classe CSS dell'evento (la scuola senza materia ha il giallo sfumato)
 function classeEvento(e) {
-  if (e.colore_scelto) return "ev-colorato";
+  if (e.colore_scelto || coloreMateria(e)) return "ev-colorato";
   if (eScuola(e)) return "ev-scuola";
   return e.colore ? "ev-colorato" : `ev-${e.tipo}`;
 }
@@ -221,7 +229,7 @@ const eScadenza = (e) => /esame|exam|midterm|final|quiz|test|assignment|consegna
 const PAROLE_GENERICHE = new Set(["principles", "business", "financial", "introduction", "lecture", "corso"]);
 function materiaDi(titolo = "") {
   const t = titolo.toLowerCase();
-  return stato.materie.find((m) => {
+  return (stato.materie || []).find((m) => {
     if (t.includes(m.nome.toLowerCase())) return true;
     return m.nome.toLowerCase().split(/[^a-zà-ù]+/).some((p) => p.length >= 6 && !PAROLE_GENERICHE.has(p) && t.includes(p));
   }) || null;

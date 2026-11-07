@@ -1170,14 +1170,12 @@ a.link { color: var(--accento); text-decoration: underline; text-underline-offse
 /* ============================================================
    GRIGIO FUMÈ SUL PASSATO, SCUOLA GIALLA "SPECCHIATA", COLORI
    ============================================================ */
-/* il passato: meno luminoso e coperto da un velo grigio fumè */
+/* il passato: un po' più spento, ma il colore della materia si riconosce ancora
+   (prima c'era un velo grigio pesante: sul telefono le lezioni sembravano tutte grigie) */
 .cal-chip, .voce-scuola, .gi-evento, .riga-agenda { position: relative; }
 .cal-evento.passato, .cal-chip.passato, .voce-scuola.passato, .gi-evento.passato, .riga-agenda.passato, .eroe-oggi li.passato {
-  filter: saturate(0.35) brightness(0.72);
-}
-.cal-evento.passato::after, .cal-chip.passato::after, .voce-scuola.passato::after, .gi-evento.passato::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(180deg, rgba(46, 46, 52, 0.55), rgba(30, 30, 34, 0.62));
+  filter: saturate(0.75) brightness(0.8);
+  opacity: 0.8;
 }
 .cal-colonna.passata { background: rgba(0, 0, 0, 0.16); }
 .cal-cella.passata { background: rgba(0, 0, 0, 0.2); }

@@ -83,12 +83,21 @@ Manca: segreto `GROQ_API_KEY`; per il bot anche `TELEGRAM_TOKEN` e "Verify JWT" 
 - ✅ **Sul telefono il menu va a sinistra**: pulsante ☰ in alto a sinistra, il menu esce da sinistra
   e si richiude quando scegli (non più la fila di icone in alto). `#bottone-menu`, `#velo-menu`,
   `#chiudi-menu` in index.html; `apriMenu`/`chiudiMenu` in app.js; stile in "Schermi più piccoli".
-- **Meno sezioni** (oggi sono 14): per esempio "Oggi" che unisce Dashboard + Giornata +
-  Quotidiane + Routine; Lezioni e Settimana prossima dentro Calendario; il resto in "Altro".
-  Da decidere insieme quali tenere.
-- **Meno colori**: verde X-ECUTE + grigi, al massimo 3 colori per i tipi di evento.
-- **Tutorial al primo accesso**: 4-5 fumetti saltabili ("qui chiedi all'assistente", "qui il
-  calendario"…), oltre alla configurazione guidata che c'è già.
+Deciso da Edoardo il 7 nov 2026 — si fa un blocco alla volta, in quest'ordine:
+- **5A · Colori delle lezioni** — ogni lezione col colore della sua materia (Matematica rosso,
+  Economia oro, Finanza azzurro, "Skills" verde tenue); il passato meno grigio, ma riconoscibile.
+  Il giallo-lime resta per i pulsanti.
+- **5B · Pulsante "tieni premuto e parla"** — un pulsante nuovo (oltre a quello della chat):
+  lo tieni premuto, parli, lo lasci → trascrive e lo manda all'assistente senza aprire la chat.
+  Il messaggio poi si ritrova nella chat di oggi.
+- **5C · Il + che fa la cosa giusta** — cambia in base alla sezione (Spese → spesa, ecc.).
+- **5D · Da 14 a 6 sezioni (+ "Gooning")** — Oggi (Dashboard + Giornata + Quotidiane),
+  Calendario (+ Settimana prossima, Lezioni, Attività extra), Progressi (Obiettivi + Monitor routine),
+  Soldi (Spese + Lista della spesa), Chat, Mail. I nomi delle voci restano quelli decisi da Edoardo e Luca.
+- **5E · Gooning** — contatore privato delle ricadute (sezione sua). Da progettare bene insieme
+  prima di scriverlo: cosa si conta, grafici, obiettivi, privacy (mai nei gruppi né nella classifica).
+- **5F · Tutorial con frecce** — 5 fumetti con freccia su ogni funzione, saltabili, una volta sola
+  dopo la configurazione guidata; si rivede da ☰. Per ultimo, quando le sezioni sono definitive.
 
 ---
 
