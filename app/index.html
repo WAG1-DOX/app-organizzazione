@@ -22,7 +22,9 @@
   <div class="guscio">
 
     <!-- ===== Barra a sinistra ===== -->
-    <aside class="barra-laterale">
+    <aside class="barra-laterale" id="barra-laterale">
+      <!-- sul telefono il menu esce da sinistra: questa X lo richiude -->
+      <button class="chiudi-menu" id="chiudi-menu" type="button" aria-label="Chiudi il menu"></button>
       <!-- dentro il sito si vede solo il simbolo, senza scritta -->
       <a class="logo" href="#home" aria-label="X-ECUTE, vai alla dashboard"><img class="logo-segno" src="img/logo.svg" alt="X-ECUTE"></a>
 
@@ -44,11 +46,15 @@
         </button>
       </div>
     </aside>
+    <!-- velo scuro dietro al menu aperto (sul telefono): toccandolo il menu si chiude -->
+    <div class="velo-menu" id="velo-menu"></div>
 
     <!-- ===== Parte principale ===== -->
     <div class="principale">
       <header class="barra-alta">
-        <div>
+        <!-- ☰ solo sul telefono: apre il menu da sinistra -->
+        <button class="bottone-menu" id="bottone-menu" type="button" aria-label="Apri il menu" aria-controls="barra-laterale" aria-expanded="false"></button>
+        <div class="barra-alta-titolo">
           <h1 id="titolo-pagina">Ciao</h1>
           <p id="sottotitolo-pagina"></p>
         </div>

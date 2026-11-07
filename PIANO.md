@@ -79,9 +79,10 @@ Manca: segreto `GROQ_API_KEY`; per il bot anche `TELEGRAM_TOKEN` e "Verify JWT" 
 - **A fine mese** un report: chi ha vinto, cosa sta andando bene, cosa migliorare
   (scritto dall'assistente). Dove arriva: da decidere (Telegram e/o chat dell'assistente).
 
-## Blocco 5 — App più semplice  · Luca
-- **Sul telefono il menu va a sinistra**: pulsante ☰ in alto a sinistra, il menu esce da sinistra
-  e si richiude quando scegli (non più la fila di icone in alto).
+## Blocco 5 — App più semplice  · Luca — 🟡 menu fatto (7 nov 2026, da Edoardo)
+- ✅ **Sul telefono il menu va a sinistra**: pulsante ☰ in alto a sinistra, il menu esce da sinistra
+  e si richiude quando scegli (non più la fila di icone in alto). `#bottone-menu`, `#velo-menu`,
+  `#chiudi-menu` in index.html; `apriMenu`/`chiudiMenu` in app.js; stile in "Schermi più piccoli".
 - **Meno sezioni** (oggi sono 14): per esempio "Oggi" che unisce Dashboard + Giornata +
   Quotidiane + Routine; Lezioni e Settimana prossima dentro Calendario; il resto in "Altro".
   Da decidere insieme quali tenere.

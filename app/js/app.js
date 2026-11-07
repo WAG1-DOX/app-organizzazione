@@ -198,6 +198,34 @@ bottoneEsci.addEventListener("click", esci);
 disegnaMenu();
 window.addEventListener("hashchange", disegna);
 
+// ---------- Menu del telefono: esce da sinistra con il pulsante ☰ ----------
+// (sul computer il menu resta sempre visibile a sinistra: queste funzioni non fanno niente di visibile)
+const bottoneMenu = document.getElementById("bottone-menu");
+const ICONA_MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+bottoneMenu.innerHTML = ICONA_MENU;
+document.getElementById("chiudi-menu").append(icona("x", 20));
+
+function apriMenu() {
+  document.body.classList.add("menu-aperto");
+  bottoneMenu.setAttribute("aria-expanded", "true");
+}
+function chiudiMenu() {
+  if (!document.body.classList.contains("menu-aperto")) return;
+  document.body.classList.remove("menu-aperto");
+  bottoneMenu.setAttribute("aria-expanded", "false");
+}
+bottoneMenu.addEventListener("click", apriMenu);
+document.getElementById("chiudi-menu").addEventListener("click", chiudiMenu);
+document.getElementById("velo-menu").addEventListener("click", chiudiMenu);
+// scegli una voce (o Configurazione / Esci) → il menu si richiude
+document.getElementById("barra-laterale").addEventListener("click", (e) => {
+  if (e.target.closest(".menu-voce, .logo")) chiudiMenu();
+});
+window.addEventListener("hashchange", chiudiMenu);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") chiudiMenu(); });
+// se giri il telefono o allarghi la finestra fino alla misura "computer", il menu torna normale
+window.matchMedia("(min-width: 861px)").addEventListener("change", (m) => { if (m.matches) chiudiMenu(); });
+
 // Prima il login: l'app si disegna solo quando sei dentro con il tuo account.
 // Poi scarica i tuoi dati dal database (sincronizza.js) e disegna.
 avviaAccesso(async () => {
