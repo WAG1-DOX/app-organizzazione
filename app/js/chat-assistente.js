@@ -281,6 +281,49 @@ function iconaMicrofono() {
   return s;
 }
 
+// ---------- Pezzi in comune tra il microfono della chat e "tieni premuto e parla" ----------
+// Accende il microfono e prepara il registratore (non lo fa ancora partire)
+async function preparaRegistratore() {
+  const flusso = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const tipo = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"]
+    .find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+  const reg = tipo ? new MediaRecorder(flusso, { mimeType: tipo }) : new MediaRecorder(flusso);
+  const pezzi = [];
+  reg.ondataavailable = (ev) => { if (ev.data && ev.data.size) pezzi.push(ev.data); };
+  const audio = () => new Blob(pezzi, { type: reg.mimeType || tipo || "audio/webm" });
+  const spegni = () => flusso.getTracks().forEach((t) => t.stop());   // via il pallino rosso del microfono
+  return { reg, audio, spegni };
+}
+
+// Audio → testo (funzione "assistente", azione "trascrivi", con Groq)
+async function trascriviAudio(audio) {
+  const b64 = await new Promise((ok, ko) => {
+    const fr = new FileReader();
+    fr.onload = () => ok(String(fr.result).split(",")[1] || "");
+    fr.onerror = ko;
+    fr.readAsDataURL(audio);
+  });
+  const { data, error } = await sb.functions.invoke("assistente", { body: { azione: "trascrivi", audio: b64, tipo: audio.type } });
+  if (error) {
+    let msg = "Non riesco a trascrivere, riprova.";
+    try { const c = await error.context.json(); if (c && c.errore) msg = c.errore; } catch (e) {}
+    throw new Error(msg);
+  }
+  return String((data && data.testo) || "").trim();
+}
+
+// Dopo una risposta che ha spuntato caselle o creato promemoria: ricarica i dati e ridisegna
+async function aggiornaDopoAzioni(data) {
+  if (!data || !Array.isArray(data.cambiati) || !data.cambiati.length || typeof scaricaDalCloud !== "function") return;
+  try {
+    await applicaDalCloud(await scaricaDalCloud());
+    disegna();
+    if (typeof inviaPromemoriaAGoogle === "function") {
+      for (const p of stato.promemoria.filter((x) => x.da_inviare)) inviaPromemoriaAGoogle(p);
+    }
+  } catch (e) { /* li vedrai al prossimo aggiornamento */ }
+}
+
 // Registrazione: tocchi il microfono → parli → lo ritocchi. L'audio va alla funzione "assistente"
 // (azione "trascrivi", Groq) e il testo viene mandato subito all'assistente.
 async function registraVoce(input, bottone) {
@@ -310,20 +353,9 @@ async function registraVoce(input, bottone) {
     const prima = input.value.trim();
     input.value = "Trascrivo…"; input.disabled = true; bottone.disabled = true;
     try {
-      const b64 = await new Promise((ok, ko) => {
-        const fr = new FileReader();
-        fr.onload = () => ok(String(fr.result).split(",")[1] || "");
-        fr.onerror = ko;
-        fr.readAsDataURL(audio);
-      });
-      const { data, error } = await sb.functions.invoke("assistente", { body: { azione: "trascrivi", audio: b64, tipo: audio.type } });
-      if (error) {
-        let msg = "Non riesco a trascrivere, riprova.";
-        try { const c = await error.context.json(); if (c && c.errore) msg = c.errore; } catch (e) {}
-        throw new Error(msg);
-      }
+      const trascritto = await trascriviAudio(audio);
       input.disabled = false; bottone.disabled = false;
-      const testo = `${prima ? prima + " " : ""}${data.testo || ""}`.trim();
+      const testo = `${prima ? prima + " " : ""}${trascritto}`.trim();
       if (testo) inviaMessaggioChat(testo); else input.value = prima;
     } catch (e) {
       input.disabled = false; bottone.disabled = false; input.value = prima;
@@ -377,18 +409,129 @@ async function inviaMessaggioChat(testo) {
     }
     Chat.messaggi.push({ ruolo: "assistente", testo: data.risposta || "", azioni: data.azioni || [] });
     // ha spuntato caselle o creato promemoria: ricarichiamo i dati e ridisegniamo la pagina sotto
-    if (Array.isArray(data.cambiati) && data.cambiati.length && typeof scaricaDalCloud === "function") {
-      try {
-        await applicaDalCloud(await scaricaDalCloud());
-        disegna();
-        if (typeof inviaPromemoriaAGoogle === "function") {
-          for (const p of stato.promemoria.filter((x) => x.da_inviare)) inviaPromemoriaAGoogle(p);
-        }
-      } catch (e) { /* li vedrai al prossimo aggiornamento */ }
-    }
+    await aggiornaDopoAzioni(data);
   } catch (e) {
     Chat.messaggi.push({ ruolo: "assistente", testo: e.message || "L'assistente non risponde, riprova tra poco.", errore: true });
   }
   Chat.inAttesa = false;
   disegnaChat();
 }
+
+// =====================================================================
+//  "TIENI PREMUTO E PARLA" (Blocco 5B)
+//  Pulsante col microfono sopra il +: lo tieni premuto, parli, lo lasci.
+//  Trascrive (Groq) e lo manda all'assistente SENZA aprire la chat; la risposta
+//  compare in un fumetto. Domanda e risposta finiscono comunque nella chat di oggi
+//  (le salva la funzione "assistente").
+// =====================================================================
+const Parla = { bottone: null, bolla: null, rec: null, premuto: false, inizio: 0, occupato: false, timer: null };
+
+function creaBottoneParla() {
+  if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return; // browser troppo vecchio
+  Parla.bottone = h("button", { class: "bottone-parla", type: "button", "aria-label": "Tieni premuto e parla all'assistente", title: "Tieni premuto e parla" }, iconaMicrofono());
+  Parla.bolla = h("div", { class: "parla-bolla", role: "status", "aria-live": "polite" });
+  document.body.append(Parla.bottone, Parla.bolla);
+  const b = Parla.bottone;
+  b.addEventListener("pointerdown", (e) => { if (e.button === 0 || e.pointerType !== "mouse") inizioParla(e); });
+  b.addEventListener("pointerup", fineParla);
+  b.addEventListener("pointercancel", fineParla);
+  b.addEventListener("contextmenu", (e) => e.preventDefault());   // niente menu "copia/salva" tenendo premuto sul telefono
+  // anche da tastiera: tieni premuto Spazio o Invio
+  b.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); inizioParla(e); } });
+  b.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); fineParla(); } });
+}
+
+function mostraBolla(contenuto, { errore = false, dura = 0 } = {}) {
+  clearTimeout(Parla.timer);
+  const chiudi = h("button", { class: "parla-chiudi", type: "button", "aria-label": "Chiudi", onclick: nascondiBolla }, icona("x", 14));
+  Parla.bolla.className = `parla-bolla visibile${errore ? " errore" : ""}`;
+  Parla.bolla.replaceChildren(chiudi, ...[].concat(contenuto));
+  if (dura) Parla.timer = setTimeout(nascondiBolla, dura);
+}
+function nascondiBolla() {
+  clearTimeout(Parla.timer);
+  if (Parla.bolla) Parla.bolla.classList.remove("visibile");
+}
+
+async function inizioParla(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  if (Parla.rec || Parla.occupato) return;
+  if (typeof sb === "undefined" || !sb || !utenteSupabase) {
+    mostraBolla("Per parlare con l'assistente devi accedere con il tuo account.", { errore: true, dura: 5000 });
+    return;
+  }
+  Parla.premuto = true;
+  try { if (e && e.pointerId !== undefined) Parla.bottone.setPointerCapture(e.pointerId); } catch (err) {}
+  mostraBolla(h("p", {}, "Ti ascolto… ", h("strong", {}, "lascia il dito"), " per mandare"));
+  let rec;
+  try { rec = await preparaRegistratore(); }
+  catch (err) {
+    Parla.premuto = false;
+    mostraBolla("Per parlare devi permettere l'uso del microfono (impostazioni del browser).", { errore: true, dura: 7000 });
+    return;
+  }
+  // hai già lasciato il dito (es. mentre il telefono chiedeva il permesso del microfono)
+  if (!Parla.premuto) {
+    rec.spegni();
+    mostraBolla("Ora tieni premuto il microfono mentre parli, poi lascia.", { dura: 5000 });
+    return;
+  }
+  Parla.rec = rec;
+  Parla.inizio = Date.now();
+  Parla.bottone.classList.add("ascolto");
+  const limite = setTimeout(fineParla, 120000);   // al massimo 2 minuti
+  rec.reg.onstop = () => { clearTimeout(limite); dopoParla(rec); };
+  rec.reg.start();
+}
+
+function fineParla() {
+  Parla.premuto = false;
+  if (Parla.rec && Parla.rec.reg.state === "recording") Parla.rec.reg.stop();
+}
+
+async function dopoParla(rec) {
+  rec.spegni();
+  Parla.rec = null;
+  Parla.bottone.classList.remove("ascolto");
+  const audio = rec.audio();
+  if (Date.now() - Parla.inizio < 600 || audio.size < 1500) {
+    mostraBolla("Tieni premuto il microfono mentre parli, poi lascia.", { dura: 4000 });
+    return;
+  }
+  Parla.occupato = true;
+  Parla.bottone.classList.add("lavora");
+  try {
+    mostraBolla(h("p", {}, "Trascrivo…"));
+    const testo = await trascriviAudio(audio);
+    if (!testo) throw new Error("Non ho capito, riprova parlando più vicino al telefono.");
+    mostraBolla([h("p", { class: "parla-detto" }, `«${testo}»`), h("p", {}, "Ci penso…")]);
+    if (typeof inviaAlCloud === "function") await inviaAlCloud();   // l'assistente vede le ultime modifiche
+    const { data, error } = await sb.functions.invoke("assistente", { body: { domanda: testo } });
+    if (error) {
+      let msg = "L'assistente non risponde, riprova tra poco.";
+      try { const c = await error.context.json(); if (c && c.errore) msg = c.errore; } catch (err) {}
+      throw new Error(msg);
+    }
+    // la chat di oggi: se è aperta aggiungiamo i messaggi, sennò si ricarica da sola quando la apri
+    if (Chat.el && Chat.el.classList.contains("aperta") && Chat.giorno === oggiChiave()) {
+      Chat.messaggi.push({ ruolo: "utente", testo }, { ruolo: "assistente", testo: data.risposta || "", azioni: data.azioni || [] });
+      disegnaChat();
+    } else {
+      Chat.giorno = null; Chat.messaggi = [];
+    }
+    mostraBolla([
+      h("p", { class: "parla-detto" }, `«${testo}»`),
+      testoChat(data.risposta || "Fatto!"),
+      (data.azioni || []).length > 0 && h("ul", { class: "assistente-azioni" }, data.azioni.map((a) => h("li", {}, a))),
+      h("button", { class: "parla-apri", type: "button", onclick: () => { nascondiBolla(); apriAssistente(); } }, "Apri la chat"),
+    ].filter(Boolean), { dura: 15000 });
+    await aggiornaDopoAzioni(data);
+  } catch (err) {
+    mostraBolla(err.message || "Qualcosa non ha funzionato, riprova.", { errore: true, dura: 7000 });
+  } finally {
+    Parla.occupato = false;
+    Parla.bottone.classList.remove("lavora");
+  }
+}
+
+creaBottoneParla();

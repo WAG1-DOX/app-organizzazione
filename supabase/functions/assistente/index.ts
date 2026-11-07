@@ -67,6 +67,15 @@ function chiaveGiornoRoma(d = new Date()): string {
   // "sv-SE" scrive le date come 2026-11-06
   return d.toLocaleDateString("sv-SE", { timeZone: FUSO });
 }
+// "2026-11-09T09:00:00+00:00" → "lunedì 2026-11-09 10:00" (ora italiana, con il giorno della settimana)
+function oraRoma(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const giorno = d.toLocaleDateString("it-IT", { timeZone: FUSO, weekday: "long" });
+  const ora = d.toLocaleTimeString("it-IT", { timeZone: FUSO, hour: "2-digit", minute: "2-digit" });
+  return `${giorno} ${chiaveGiornoRoma(d)} ${ora}`;
+}
 const nuovoId = (prefisso: string) =>
   `${prefisso}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const minutiDa = (hhmm: string) => { const [h, m] = String(hhmm).split(":").map(Number); return (h || 0) * 60 + (m || 0); };
@@ -346,7 +355,10 @@ async function rispondi(
       timeZone: FUSO, weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
     }),
     oggi_data: k,
-    eventi: (eventi ?? []).map((e: any) => ({ ...e, condiviso: e.gruppo_id !== null, gruppo_id: undefined })),
+    // orari già nell'ora italiana (nel database sono in UTC: Claude li leggeva un'ora indietro)
+    eventi: (eventi ?? []).map((e: any) => ({
+      ...e, inizio: oraRoma(e.inizio), fine: oraRoma(e.fine), condiviso: e.gruppo_id !== null, gruppo_id: undefined,
+    })),
     oggi: {
       attivita_quotidiane: (dati.quotidiane ?? []).map((q: any) => ({
         id: q.id, nome: q.nome, volte_al_giorno: q.volte_al_giorno, fatte: Math.min(Number(reg[q.id] ?? 0), q.volte_al_giorno),

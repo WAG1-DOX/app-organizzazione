@@ -84,18 +84,23 @@ Manca: segreto `GROQ_API_KEY`; per il bot anche `TELEGRAM_TOKEN` e "Verify JWT" 
   e si richiude quando scegli (non più la fila di icone in alto). `#bottone-menu`, `#velo-menu`,
   `#chiudi-menu` in index.html; `apriMenu`/`chiudiMenu` in app.js; stile in "Schermi più piccoli".
 Deciso da Edoardo il 7 nov 2026 — si fa un blocco alla volta, in quest'ordine:
-- **5A · Colori delle lezioni** — ogni lezione col colore della sua materia (Matematica rosso,
+- ✅ **5A · Colori delle lezioni** (fatto 7 nov: `coloreMateria` in base.js) — ogni lezione col colore della sua materia (Matematica rosso,
   Economia oro, Finanza azzurro, "Skills" verde tenue); il passato meno grigio, ma riconoscibile.
   Il giallo-lime resta per i pulsanti.
-- **5B · Pulsante "tieni premuto e parla"** — un pulsante nuovo (oltre a quello della chat):
+- ✅ **5B · Pulsante "tieni premuto e parla"** (fatto 7 nov: `.bottone-parla` sopra il +, codice in fondo a
+  chat-assistente.js; corretto anche l'assistente che leggeva gli orari un'ora indietro) — un pulsante nuovo (oltre a quello della chat):
   lo tieni premuto, parli, lo lasci → trascrive e lo manda all'assistente senza aprire la chat.
   Il messaggio poi si ritrova nella chat di oggi.
 - **5C · Il + che fa la cosa giusta** — cambia in base alla sezione (Spese → spesa, ecc.).
 - **5D · Da 14 a 6 sezioni (+ "Gooning")** — Oggi (Dashboard + Giornata + Quotidiane),
   Calendario (+ Settimana prossima, Lezioni, Attività extra), Progressi (Obiettivi + Monitor routine),
-  Soldi (Spese + Lista della spesa), Chat, Mail. I nomi delle voci restano quelli decisi da Edoardo e Luca.
-- **5E · Gooning** — contatore privato delle ricadute (sezione sua). Da progettare bene insieme
-  prima di scriverlo: cosa si conta, grafici, obiettivi, privacy (mai nei gruppi né nella classifica).
+  Soldi (Spese + Lista della spesa), **Classifica** (al posto di "Chat e gruppi": linguette
+  Classifica · Distintivi · Chat), Mail. I nomi delle voci restano quelli decisi da Edoardo e Luca.
+- **5E · Gooning** — contatore delle ricadute (sezione sua). **Conta nel punteggio e nei distintivi.**
+  Da progettare bene insieme prima di scriverlo: cosa si conta, grafici, obiettivi, cosa vedono gli
+  amici (proposta: solo punti e distintivi, il numero preciso solo se lo scegli tu).
+- **Classifica + distintivi** (unisce il Blocco 4): punti dalle abitudini, eventi, sfide e Gooning;
+  distintivi assegnati in automatico (es. "7 giorni di fila") che danno punti in classifica.
 - **5F · Tutorial con frecce** — 5 fumetti con freccia su ogni funzione, saltabili, una volta sola
   dopo la configurazione guidata; si rivede da ☰. Per ultimo, quando le sezioni sono definitive.
 
