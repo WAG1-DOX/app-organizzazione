@@ -49,6 +49,7 @@ function disegna() {
   disegnaMiniCalendario();
   aggiornaCampanella();
   aggiornaBadgeChat();
+  if (typeof aggiornaBadgeMail === "function") aggiornaBadgeMail();
 }
 
 // Ridisegna la sezione senza far saltare niente: tiene la posizione della pagina
