@@ -83,9 +83,22 @@ class ErroreGmail extends Error {
   constructor(messaggio, tipo) { super(messaggio); this.tipo = tipo; }
 }
 
+// Gmail accetta circa 50 letture al secondo per persona: noi restiamo sotto le 20,
+// così la prima lettura (qualche centinaio di mail) non viene mai bloccata.
+const Ritmo = { ultime: [] };
+async function aspettaTurno() {
+  for (;;) {
+    const adesso = Date.now();
+    Ritmo.ultime = Ritmo.ultime.filter((t) => adesso - t < 1000);
+    if (Ritmo.ultime.length < 18) { Ritmo.ultime.push(adesso); return; }
+    await new Promise((ok) => setTimeout(ok, 1000 - (adesso - Ritmo.ultime[0]) + 10));
+  }
+}
+
 async function gmail(metodo, percorso, corpo, tentativo = 0, rinnovato = false) {
   if (typeof googleDalServer !== "function" || !googleDalServer()) throw new ErroreGmail("Google non è configurato sul server.", "spento");
   await assicuraToken();
+  await aspettaTurno();
   const r = await fetch(`${API_GMAIL}${percorso}`, {
     method: metodo,
     headers: { Authorization: `Bearer ${Google.token}`, ...(corpo ? { "Content-Type": "application/json" } : {}) },
@@ -222,6 +235,11 @@ async function collegaGmail() {
     salva();
     if (Google.stato !== "attivo") collegaGoogle(true);   // riparte anche il calendario
     await aggiornaPosta(true);
+    // Google fa scegliere i permessi uno per uno: se Gmail non è stato spuntato, lo diciamo chiaro
+    if (Posta.stato === "manca-permesso") {
+      Posta.errore = "Nella finestra di Google non è stato spuntato il permesso per Gmail. Premi di nuovo «Collega Gmail» e spunta la casella delle email.";
+      ridisegnaFermo();
+    }
   } catch (e) {
     Posta.stato = e.tipo || "errore";
     Posta.errore = e.message;
@@ -297,7 +315,18 @@ async function aggiornaPosta(forza = false) {
   }
 }
 
+// Pallino sul menu "Check-up mail": quante importanti non lette (come quello della chat)
+function aggiornaBadgeMail() {
+  const voce = document.querySelector('#menu .menu-voce[data-id="mail"]');
+  if (!voce) return;
+  const vecchio = voce.querySelector(".pallino-avviso");
+  if (vecchio) vecchio.remove();
+  const n = Posta.mail.length ? gruppiPosta(true).importanti.filter((m) => m.etichette.includes("UNREAD")).length : 0;
+  if (n) voce.append(h("span", { class: "pallino-avviso pallino-menu" }, n > 99 ? "99+" : n));
+}
+
 function ridisegnaSeVisibile() {
+  aggiornaBadgeMail();
   const id = typeof sezioneAttuale === "function" ? sezioneAttuale().id : "";
   if ((id === "mail" || id === "home") && !document.querySelector("#modale.aperta")) ridisegnaFermo();
 }
@@ -311,8 +340,8 @@ function pulisciCache() {
 // Le persone a cui hai scritto (ultimo anno): segnale fortissimo di "persona vera che conosci"
 async function aggiornaContatti() {
   if (Posta.contatti.length && Date.now() - Posta.contattiDel < 24 * 3600 * 1000) return;
-  const ids = await idDaRicerca("in:sent newer_than:365d", 250);
-  const lette = await aPiccoliGruppi(ids, 8, (id) => leggiIntestazioni(id, ["To", "Cc"]));
+  const ids = await idDaRicerca("in:sent newer_than:365d", 150);
+  const lette = await aPiccoliGruppi(ids, 5, (id) => leggiIntestazioni(id, ["To", "Cc"]));
   const tutti = new Set();
   for (const g of lette) if (g) for (const e of indirizziDi(`${intestazione(g, "To")},${intestazione(g, "Cc")}`)) tutti.add(e);
   if (Posta.email) tutti.delete(Posta.email);
@@ -780,7 +809,7 @@ function aggiungiRegola(chiave, voce) {
 // ---------- 3. Newsletter ----------
 async function analizzaNewsletter() {
   const ids = await idDaRicerca("newer_than:28d -in:sent -in:chats -in:drafts -in:trash (category:promotions OR category:social OR category:updates OR category:forums OR unsubscribe OR disiscriviti OR \"annulla iscrizione\" OR \"cancella iscrizione\")", 400);
-  const lette = await aPiccoliGruppi(ids, 8, (id) => leggiIntestazioni(id, ["From", "Subject", "List-Unsubscribe", "List-Unsubscribe-Post", "List-Id", "Precedence"]));
+  const lette = await aPiccoliGruppi(ids, 5, (id) => leggiIntestazioni(id, ["From", "Subject", "List-Unsubscribe", "List-Unsubscribe-Post", "List-Id", "Precedence"]));
   const perMittente = new Map();
   for (const g of lette) {
     if (!g) continue;

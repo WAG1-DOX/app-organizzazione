@@ -90,7 +90,7 @@ function schermataCollegamento() {
   const carica = s === "carico";
   const testo = {
     "api-spenta": "Il permesso c'è, ma nel progetto Google «x-ecute» le API di Gmail non sono ancora attive. Lo deve fare Edoardo (Google Cloud → API e servizi → Libreria → Gmail API → Abilita). Poi premi «Riprova».",
-    "manca-permesso": "Google è collegato solo per il calendario. Premi il bottone e, nella finestra di Google, spunta anche il permesso per Gmail.",
+    "manca-permesso": Posta.errore || "Google è collegato solo per il calendario. Premi il bottone e, nella finestra di Google, spunta anche il permesso per Gmail.",
     errore: Posta.errore || "Qualcosa non ha funzionato.",
     spento: "Serve prima il collegamento a Google (quello del calendario).",
   }[s] || "Collega Gmail una volta sola: da lì l'app controlla le mail da sola.";
@@ -98,7 +98,7 @@ function schermataCollegamento() {
     pannello("card-luce", null, null,
       h("small", { class: "etichetta-luce" }, "Check-up mail"),
       h("p", { class: "luce-titolo" }, carica ? "Leggo le tue mail…" : "Le mail che contano, e basta"),
-      h("p", { class: "testo-leggero" }, carica ? "La prima volta ci mette una decina di secondi: guardo le ultime 3 settimane e a chi scrivi di solito." : testo),
+      h("p", { class: "testo-leggero" }, carica ? "La prima volta ci mette 10-20 secondi: guardo le ultime 3 settimane e a chi scrivi di solito." : testo),
       !carica && h("div", { class: "azioni-modale sinistra" },
         s === "api-spenta"
           ? h("button", { class: "bottone-accento", type: "button", onclick: () => aggiornaPosta(true) }, icona("sync", 16), "Riprova")

@@ -196,6 +196,10 @@ Esempio di evento come arriverà all'app (usare questa forma per tutti gli event
 - Mail della scuola: Luca ha l'**inoltro automatico** da luca.deodati@student.h-farm.com alla Gmail personale.
   L'app riconosce le mail inoltrate (intestazione `X-Forwarded-For`, o destinatario @h-farm) → `m.conto = "H-FARM"`;
   in alto il filtro Tutte / Personale / H-FARM. Arrivano solo le mail nuove (da quando l'inoltro è attivo).
+- Limite di Gmail: l'app fa al massimo 18 richieste al secondo (`aspettaTurno` in gmail.js) e 5 alla volta;
+  se Gmail dice "rallenta" (429 o 403 rateLimitExceeded) aspetta e riprova. Pallino sul menu = importanti non lette.
+- ⚠️ Tutti i file JS dell'app condividono gli stessi nomi globali: prima di creare una funzione/costante nuova
+  controllare che il nome non esista già (es. `nomeConto` è di banca.js), sennò un file intero smette di funzionare.
 
 ## Salvataggio su Supabase (`app/js/sincronizza.js`)
 - Il browser tiene una copia (localStorage); dopo il login comandano i dati del database.
